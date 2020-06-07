@@ -45,29 +45,35 @@ class windows():
     def upload(self,localFile,remotePath):
         if self.smb:
             f = open(localFile, mode="r")
-            remoteFile = smbclient.open_file(remotePath, mode="w")
-            while True:
-                part = f.read(4096)
-                if not part:
-                    break
-                remoteFile.write(part)
-            remoteFile.close()
-            f.close()
-            return True
+            try:
+                remoteFile = smbclient.open_file("\\{0}\{1}".format(self.host,remotePath), mode="w")
+                while True:
+                    part = f.read(4096)
+                    if not part:
+                        break
+                    remoteFile.write(part)
+                remoteFile.close()
+                f.close()
+                return True
+            except:
+                pass
         return False
 
     def download(self,remoteFile,localPath):
         if self.smb:
             f = open(localPath, mode="w")
-            remoteFile = smbclient.open_file("\\{0}\{1}".format(self.host,remoteFile), mode="r")
-            while True:
-                part = remoteFile.read(4096)
-                if not part:
-                    break
-                f.write(part)
-            remoteFile.close()
-            f.close()
-            return True
+            try:
+                remoteFile = smbclient.open_file("\\{0}\{1}".format(self.host,remoteFile), mode="r")
+                while True:
+                    part = remoteFile.read(4096)
+                    if not part:
+                        break
+                    f.write(part)
+                remoteFile.close()
+                f.close()
+                return True
+            except:
+                pass
         return False
 
     def __del__(self):
