@@ -1,0 +1,4 @@
+paramiko
+pywinrm
+smbprotocol
+scp
