@@ -11,11 +11,12 @@ class _remoteConnectLinux(action._action):
     def run(self,data,persistentData,actionResult):
         host = helpers.evalString(self.host,{"data" : data})
         user = helpers.evalString(self.user,{"data" : data})
-        password = auth.getPasswordFromENC(self.password)
+        if self.password.startswith("ENC"):
+            password = auth.getPasswordFromENC(self.password)
         keyfile = helpers.evalString(self.keyfile,{"data" : data})
 
         if keyfile != "":
-            client = linux.linux(host,user,keyfile=keyfile)
+            client = linux.linux(host,user,keyFile=keyfile)
         else:
             client = linux.linux(host,user,password=password)
         if client.client != None:

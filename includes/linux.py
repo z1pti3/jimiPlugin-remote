@@ -48,7 +48,12 @@ class linux():
 
     def upload(self, localFile, remotePath):
         if self.scp:
-            self.scp.put(localFile,remote_path=remotePath,recursive=True)
+            try:
+                self.scp.put(localFile,remotePath)
+                return True
+            except:
+                return False
+        return False
 
     def download(self, remoteFile, localPath):
         if self.scp:
