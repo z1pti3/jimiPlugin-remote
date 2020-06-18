@@ -65,6 +65,17 @@ class _remoteConnectWindows(action._action):
             return True
         return super(_remoteConnectWindows, self).setAttribute(attr,value)
 
+class _remoteDisconnect(action._action):
+    def run(self,data,persistentData,actionResult):
+        client = None
+        if "remote" in persistentData:
+            if "client" in persistentData["remote"]:
+                client = persistentData["remote"]["client"]
+        if client:
+            client.disconnect()
+        actionResult["result"] = True
+        actionResult["rc"] = 0
+        return actionResult
 
 class _remoteCommand(action._action):
     command = str()

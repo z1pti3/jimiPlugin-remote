@@ -1,6 +1,11 @@
+from threading import Lock
 from winrm.protocol import Protocol
 import smbclient
 from pathlib import Path
+
+# Cheat without using smbclient low level mode to detmine if the client is open for more than one flow
+openConnections = {}
+openConnectionsLock = Lock()
 
 class windows():
 
@@ -19,7 +24,11 @@ class windows():
 
     def connectSMB(self,host,username,password):
         try:
-            smbclient.register_session(host, username=username, password=password)
+            with openConnectionsLock:
+                if host not in openConnections:
+                    smbclient.register_session(host, username=username, password=password)
+                    openConnections[host] = 0
+                openConnections[host]+=1
         except:
             return None
         return True
@@ -29,9 +38,14 @@ class windows():
             self.client.close_shell(self.clientShell)
             self.client = None
 
-        if self.smb:
-            smbclient.delete_session(self.host)
-            self.smb = None
+        with openConnectionsLock:
+            if self.smb:
+                if self.host in openConnections:
+                    openConnections[self.host]-=1
+                    if openConnections[self.host] == 0:
+                        del openConnections[self.host]
+                        smbclient.delete_session(self.host)
+                        self.smb = None
 
     def command(self, command, args=[], elevated=False):
         if self.client and self.clientShell:
