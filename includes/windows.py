@@ -12,10 +12,13 @@ class windows():
     def __init__(self, host, username="administrator", password=""):
         self.host = host
         self.client, self.clientShell = self.connect(host,username,password)
-        self.smb = self.connectSMB(host,username,password)
+        if self.client:
+            self.smb = self.connectSMB(host,username,password)
+        else:
+            self.smb = None
         
     def connect(self,host,username,password):
-        client = Protocol(endpoint="http://{0}:5985/wsman".format(host),transport="ntlm",username=username,password=password)
+        client = Protocol(endpoint="http://{0}:5985/wsman".format(host),transport="ntlm",username=username,password=password,read_timeout_sec=30)
         try:
             clientShell = client.open_shell()
         except:
@@ -26,7 +29,7 @@ class windows():
         try:
             with openConnectionsLock:
                 if host not in openConnections:
-                    smbclient.register_session(host, username=username, password=password)
+                    smbclient.register_session(host, username=username, password=password,connection_timeout=30)
                     openConnections[host] = 0
                 openConnections[host]+=1
         except:
