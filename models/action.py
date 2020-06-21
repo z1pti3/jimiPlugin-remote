@@ -30,11 +30,13 @@ class _remoteConnectLinux(action._action):
             actionResult["rc"] = 403
             return actionResult
 
-    def setAttribute(self,attr,value):
+    def setAttribute(self,attr,value,sessionData=None):
         if attr == "password" and not value.startswith("ENC "):
-            self.password = "ENC {0}".format(auth.getENCFromPassword(value))
-            return True
-        return super(_remoteConnectLinux, self).setAttribute(attr,value)
+            if fieldACLAccess(sessionData,self.acl,attr,accessType="write"):
+                self.password = "ENC {0}".format(auth.getENCFromPassword(value))
+                return True
+            return False
+        return super(_remoteConnectLinux, self).setAttribute(attr,value,sessionData=sessionData)
 
 
 class _remoteConnectWindows(action._action):
@@ -59,11 +61,11 @@ class _remoteConnectWindows(action._action):
             actionResult["rc"] = 403
             return actionResult
 
-    def setAttribute(self,attr,value):
+    def setAttribute(self,attr,value,sessionData=None):
         if attr == "password" and not value.startswith("ENC "):
             self.password = "ENC {0}".format(auth.getENCFromPassword(value))
             return True
-        return super(_remoteConnectWindows, self).setAttribute(attr,value)
+        return super(_remoteConnectWindows, self).setAttribute(attr,value,sessionData=sessionData)
 
 class _remoteDisconnect(action._action):
     def run(self,data,persistentData,actionResult):
