@@ -50,7 +50,7 @@ class windows():
                         smbclient.delete_session(self.host)
                         self.smb = None
 
-    def command(self, command, args=[], elevated=False):
+    def command(self, command, args=[], elevate=False):
         if self.client and self.clientShell:
             commandId = self.client.run_command(self.clientShell,command, args)
             stdout, stderr, exitCode = self.client.get_command_output(self.clientShell, commandId)
