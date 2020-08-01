@@ -32,10 +32,8 @@ class _remoteConnectLinux(action._action):
 
     def setAttribute(self,attr,value,sessionData=None):
         if attr == "password" and not value.startswith("ENC "):
-            if fieldACLAccess(sessionData,self.acl,attr,accessType="write"):
-                self.password = "ENC {0}".format(auth.getENCFromPassword(value))
-                return True
-            return False
+            self.password = "ENC {0}".format(auth.getENCFromPassword(value))
+            return True
         return super(_remoteConnectLinux, self).setAttribute(attr,value,sessionData=sessionData)
 
 
