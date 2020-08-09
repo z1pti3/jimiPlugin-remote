@@ -63,9 +63,10 @@ class windows():
 
     def upload(self,localFile,remotePath):
         if self.smb:
+            # single file
             if not os.path.isdir(localFile):
-                f = open(localFile, mode="r")
-                remoteFile = smbclient.open_file("\\{0}\{1}".format(self.host,remotePath), mode="w")
+                f = open(localFile, mode="rb")
+                remoteFile = smbclient.open_file("\\{0}\{1}".format(self.host,remotePath), mode="wb")
                 try:
                     while True:
                         part = f.read(4096)
@@ -73,17 +74,18 @@ class windows():
                             break
                         remoteFile.write(part)
                 except:
-                    pass
+                    return False
                 finally:
                     remoteFile.close()
                     f.close()
                 return True
+            # Directory
             else:
                 try:
                     smbclient.mkdir("\\{0}\{1}".format(self.host,remotePath))
                 except OSError as e:
                     if e.errno != errno.EEXIST:
-                        raise
+                        return False
                 for root, dirs, files in os.walk(localFile):
                     for dir in dirs:
                         fullPath = os.path.join(root,dir)
@@ -92,12 +94,12 @@ class windows():
                             smbclient.mkdir("\\{0}\{1}\{2}".format(self.host,remotePath,fullPath[len(localFile)+1:]))
                         except OSError as e:
                             if e.errno != errno.EEXIST:
-                                raise
+                                return False
                     for _file in files:
                         fullPath = os.path.join(root,_file)
-                        f = open(fullPath, mode="r")
+                        f = open(fullPath, mode="rb")
                         fullPath=fullPath.replace("/","\\")
-                        remoteFile = smbclient.open_file("\\{0}\{1}\{2}".format(self.host,remotePath,fullPath[len(localFile)+1:]), mode="w")
+                        remoteFile = smbclient.open_file("\\{0}\{1}\{2}".format(self.host,remotePath,fullPath[len(localFile)+1:]), mode="wb",)
                         try:
                             while True:
                                 part = f.read(4096)
@@ -105,17 +107,18 @@ class windows():
                                     break
                                 remoteFile.write(part)
                         except:
-                            pass
+                            return False
                         finally:
                             remoteFile.close()
                             f.close()
+                return True
         return False
 
     def download(self,remoteFile,localPath):
         if self.smb:
-            f = open(localPath, mode="w")
+            f = open(localPath, mode="wb")
             try:
-                remoteFile = smbclient.open_file("\\{0}\{1}".format(self.host,remoteFile), mode="r")
+                remoteFile = smbclient.open_file("\\{0}\{1}".format(self.host,remoteFile), mode="rb")
                 while True:
                     part = remoteFile.read(4096)
                     if not part:
