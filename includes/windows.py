@@ -88,7 +88,6 @@ class windows():
                     for dir in dirs:
                         fullPath = os.path.join(root,dir)
                         fullPath=fullPath.replace("/","\\")
-                        print(fullPath)
                         try:
                             smbclient.mkdir("\\{0}\{1}\{2}".format(self.host,remotePath,fullPath[len(localFile)+1:]))
                         except OSError as e:
@@ -96,10 +95,8 @@ class windows():
                                 raise
                     for _file in files:
                         fullPath = os.path.join(root,_file)
-                        print(fullPath)
                         f = open(fullPath, mode="r")
                         fullPath=fullPath.replace("/","\\")
-                        print(fullPath[len(localFile)+1:])
                         remoteFile = smbclient.open_file("\\{0}\{1}\{2}".format(self.host,remotePath,fullPath[len(localFile)+1:]), mode="w")
                         try:
                             while True:
