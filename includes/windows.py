@@ -2,6 +2,8 @@ from threading import Lock
 from winrm.protocol import Protocol
 import smbclient
 from pathlib import Path
+import os
+import errno
 
 # Cheat without using smbclient low level mode to detmine if the client is open for more than one flow
 openConnections = {}
@@ -61,19 +63,55 @@ class windows():
 
     def upload(self,localFile,remotePath):
         if self.smb:
-            f = open(localFile, mode="r")
-            try:
+            if not os.path.isdir(localFile):
+                f = open(localFile, mode="r")
                 remoteFile = smbclient.open_file("\\{0}\{1}".format(self.host,remotePath), mode="w")
-                while True:
-                    part = f.read(4096)
-                    if not part:
-                        break
-                    remoteFile.write(part)
-                remoteFile.close()
-                f.close()
+                try:
+                    while True:
+                        part = f.read(4096)
+                        if not part:
+                            break
+                        remoteFile.write(part)
+                except:
+                    pass
+                finally:
+                    remoteFile.close()
+                    f.close()
                 return True
-            except:
-                pass
+            else:
+                try:
+                    smbclient.mkdir("\\{0}\{1}".format(self.host,remotePath))
+                except OSError as e:
+                    if e.errno != errno.EEXIST:
+                        raise
+                for root, dirs, files in os.walk(localFile):
+                    for dir in dirs:
+                        fullPath = os.path.join(root,dir)
+                        fullPath=fullPath.replace("/","\\")
+                        print(fullPath)
+                        try:
+                            smbclient.mkdir("\\{0}\{1}\{2}".format(self.host,remotePath,fullPath[len(localFile)+1:]))
+                        except OSError as e:
+                            if e.errno != errno.EEXIST:
+                                raise
+                    for _file in files:
+                        fullPath = os.path.join(root,_file)
+                        print(fullPath)
+                        f = open(fullPath, mode="r")
+                        fullPath=fullPath.replace("/","\\")
+                        print(fullPath[len(localFile)+1:])
+                        remoteFile = smbclient.open_file("\\{0}\{1}\{2}".format(self.host,remotePath,fullPath[len(localFile)+1:]), mode="w")
+                        try:
+                            while True:
+                                part = f.read(4096)
+                                if not part:
+                                    break
+                                remoteFile.write(part)
+                        except:
+                            pass
+                        finally:
+                            remoteFile.close()
+                            f.close()
         return False
 
     def download(self,remoteFile,localPath):
