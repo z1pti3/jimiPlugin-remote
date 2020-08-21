@@ -1,5 +1,6 @@
 from threading import Lock
 from winrm.protocol import Protocol
+from winrm.exceptions import WinRMError, WinRMOperationTimeoutError, WinRMTransportError
 import smbclient
 from pathlib import Path
 import os
@@ -13,6 +14,8 @@ class windows():
 
     def __init__(self, host, username="administrator", password=""):
         self.host = host
+        self.username = username
+        self.password = password
         self.client, self.clientShell = self.connect(host,username,password)
         if self.client:
             self.smb = self.connectSMB(host,username,password)
@@ -52,14 +55,21 @@ class windows():
                         smbclient.delete_session(self.host)
                         self.smb = None
 
+    def executeCommand(self,command,args=[],elevate=False):
+        commandId = self.client.run_command(self.clientShell,command, args)
+        stdout, stderr, exitCode = self.client.get_command_output(self.clientShell, commandId)
+        self.client.cleanup_command(self.clientShell, commandId)
+        response = stdout.decode().strip()
+        errors = stderr.decode().strip()
+        return (exitCode, response, errors)
+
     def command(self, command, args=[], elevate=False):
         if self.client and self.clientShell:
-            commandId = self.client.run_command(self.clientShell,command, args)
-            stdout, stderr, exitCode = self.client.get_command_output(self.clientShell, commandId)
-            self.client.cleanup_command(self.clientShell, commandId)
-            response = stdout.decode().strip()
-            errors = stderr.decode().strip()
-            return (exitCode, response, errors)
+            try:
+                return self.executeCommand(command,args,elevate)
+            except WinRMOperationTimeoutError:
+                self.client, self.clientShell = connect(self.host,self.username,self.password)
+                return self.executeCommand(command,args,elevate)
 
     def upload(self,localFile,remotePath):
         if self.smb:
