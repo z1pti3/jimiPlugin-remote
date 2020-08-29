@@ -50,7 +50,7 @@ class _remoteConnectWindows(action._action):
         password = auth.getPasswordFromENC(self.password)
 
         client = windows.windows(host,user,password)
-        if client.client != None and client.smb != None:
+        if client.client != None:
             persistentData["remote"]={}
             persistentData["remote"]["client"] = client
             actionResult["result"] = True
