@@ -6,6 +6,7 @@ class linux():
     client = None
 
     def __init__(self, host, username="root", keyFile='', password=''):
+        self.error = ""
         if keyFile != '':
             self.client = self.connect(host,username,keyFile=str(Path(keyFile)))
         else:
@@ -22,7 +23,8 @@ class linux():
                 client.connect(host, username=username, key_filename=keyFile, look_for_keys=True, timeout=5000)
             else:
                 client.connect(host, username=username, password=password, look_for_keys=True, timeout=5000)
-        except:
+        except Exception as e:
+            self.error = e
             return None
         return client
 
@@ -34,6 +36,10 @@ class linux():
         if self.client:
             self.client.close()
             self.client = None
+
+    def reboot(self,timeout):
+        # Not implimented yet!
+        pass
 
     def command(self, command, args=[], elevate=False):
         if self.client:

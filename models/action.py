@@ -24,10 +24,12 @@ class _remoteConnectLinux(action._action):
             persistentData["remote"]["client"] = client
             actionResult["result"] = True
             actionResult["rc"] = 0
+            actionResult["msg"] = "Connection successful"
             return actionResult
         else:
             actionResult["result"] = False
             actionResult["rc"] = 403
+            actionResult["msg"] = "Connection failed - {0}".format(client.error)
             return actionResult
 
     def setAttribute(self,attr,value,sessionData=None):
@@ -48,15 +50,17 @@ class _remoteConnectWindows(action._action):
         password = auth.getPasswordFromENC(self.password)
 
         client = windows.windows(host,user,password)
-        if client.client != None:
+        if client.client != None and client.smb != None:
             persistentData["remote"]={}
             persistentData["remote"]["client"] = client
             actionResult["result"] = True
             actionResult["rc"] = 0
+            actionResult["msg"] = "Connection successful"
             return actionResult
         else:
             actionResult["result"] = False
             actionResult["rc"] = 403
+            actionResult["msg"] = "Connection failed - {0}".format(client.error)
             return actionResult
 
     def setAttribute(self,attr,value,sessionData=None):
@@ -74,6 +78,7 @@ class _remoteDisconnect(action._action):
         if client:
             client.disconnect()
         actionResult["result"] = True
+        actionResult["msg"] = "Connection disconnected"
         actionResult["rc"] = 0
         return actionResult
 
@@ -97,6 +102,34 @@ class _remoteCommand(action._action):
         else:
             actionResult["result"] = False
             actionResult["rc"] = 403
+            actionResult["msg"] = "No connection found"
+            return actionResult
+
+class _remoteReboot(action._action):
+    timeout = int()
+
+    def run(self,data,persistentData,actionResult):
+        client = None
+        if "remote" in persistentData:
+            if "client" in persistentData["remote"]:
+                client = persistentData["remote"]["client"]
+        if client:
+            timeout = 60
+            if self.timeout > 0:
+                timeout = self.timeout
+            result = client.reboot(timeout)
+            actionResult["result"] = result
+            if result:
+                actionResult["rc"] = 0
+                actionResult["msg"] = "Reboot successful"
+            else:
+                actionResult["rc"] = 255
+                actionResult["msg"] = "Reboot failed"
+            return actionResult
+        else:
+            actionResult["result"] = False
+            actionResult["rc"] = 403
+            actionResult["msg"] = "No connection found"
             return actionResult
 
 class _remoteDownload(action._action):
@@ -114,10 +147,12 @@ class _remoteDownload(action._action):
         if client:
             if client.download(remoteFile,localFile):
                 actionResult["result"] = True
+                actionResult["msg"] = "File transfered successful"
                 actionResult["rc"] = 0
                 return actionResult
 
         actionResult["result"] = False
+        actionResult["msg"] = "File transfer failed"
         actionResult["rc"] = 403
         return actionResult
 
@@ -136,9 +171,11 @@ class _remoteUpload(action._action):
         if client:
             if client.upload(localFile,remoteFile):
                 actionResult["result"] = True
+                actionResult["msg"] = "File transfered successful"
                 actionResult["rc"] = 0
                 return actionResult
                 
         actionResult["result"] = False
+        actionResult["msg"] = "File transfer failed"
         actionResult["rc"] = 403
         return actionResult

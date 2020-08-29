@@ -4,6 +4,7 @@ from winrm.exceptions import WinRMError, WinRMOperationTimeoutError, WinRMTransp
 import smbclient
 from pathlib import Path
 import os
+import time
 import errno
 
 # Cheat without using smbclient low level mode to detmine if the client is open for more than one flow
@@ -16,60 +17,79 @@ class windows():
         self.host = host
         self.username = username
         self.password = password
-        self.client, self.clientShell = self.connect(host,username,password)
+        self.error = ""
+        self.client = self.connect(host,username,password)
         if self.client:
             self.smb = self.connectSMB(host,username,password)
         else:
             self.smb = None
+
+    def __del__(self):
+        self.disconnect()
         
     def connect(self,host,username,password):
         client = Protocol(endpoint="http://{0}:5985/wsman".format(host),transport="ntlm",username=username,password=password,read_timeout_sec=30)
-        try:
-            clientShell = client.open_shell()
-        except:
-            return (None, None)
-        return (client, clientShell)
+        return client
 
     def connectSMB(self,host,username,password):
         try:
             with openConnectionsLock:
                 if host not in openConnections:
                     smbclient.register_session(host, username=username, password=password,connection_timeout=30)
-                    openConnections[host] = 0
-                openConnections[host]+=1
-        except:
+                    openConnections[host] = time.time()
+                else:
+                    self.error = "Existing connection still active"
+                    return False
+        except Exception as e:
+            self.error = e
             return None
         return True
 
     def disconnect(self):
         if self.client:
-            self.client.close_shell(self.clientShell)
             self.client = None
 
         with openConnectionsLock:
-            if self.smb:
-                if self.host in openConnections:
-                    openConnections[self.host]-=1
-                    if openConnections[self.host] == 0:
-                        del openConnections[self.host]
-                        smbclient.delete_session(self.host)
-                        self.smb = None
+            if self.host in openConnections:
+                del openConnections[self.host]
+                smbclient.delete_session(self.host)
+                self.smb = None
+
+    def reboot(self,timeout):
+        startTime = time.time()
+        exitCode, response, error = self.executeCommand("shutdown -r -t 30 -f")
+        endTime = time.time()
+        while endTime - startTime < timeout:
+            endTime = time.time()
+            try:
+                self.executeCommand("ipconfig")
+            except:
+                break
+            time.sleep(10)
+        if exitCode == 0:
+            while endTime - startTime < timeout:
+                endTime = time.time()
+                time.sleep(10)
+                self.client = self.connect(self.host,self.username,self.password)
+                if self.client:
+                    return True
+        else:
+            self.error = "Unable to reboot server - command failed"
+        return False
 
     def executeCommand(self,command,args=[],elevate=False):
-        commandId = self.client.run_command(self.clientShell,command, args)
-        stdout, stderr, exitCode = self.client.get_command_output(self.clientShell, commandId)
-        self.client.cleanup_command(self.clientShell, commandId)
+        clientShell = self.client.open_shell()
+        commandId = self.client.run_command(clientShell,command, args)
+        stdout, stderr, exitCode = self.client.get_command_output(clientShell, commandId)
+        self.client.cleanup_command(clientShell, commandId)
+        self.client.close_shell(clientShell)
         response = stdout.decode().strip()
         errors = stderr.decode().strip()
         return (exitCode, response, errors)
 
     def command(self, command, args=[], elevate=False):
-        if self.client and self.clientShell:
-            try:
-                return self.executeCommand(command,args,elevate)
-            except WinRMOperationTimeoutError:
-                self.client, self.clientShell = connect(self.host,self.username,self.password)
-                return self.executeCommand(command,args,elevate)
+        if self.client:
+            return self.executeCommand(command,args,elevate)
 
     def upload(self,localFile,remotePath):
         if self.smb:
@@ -83,7 +103,8 @@ class windows():
                         if not part:
                             break
                         remoteFile.write(part)
-                except:
+                except Exception as e:
+                    self.error = e
                     return False
                 finally:
                     remoteFile.close()
@@ -116,7 +137,8 @@ class windows():
                                 if not part:
                                     break
                                 remoteFile.write(part)
-                        except:
+                        except Exception as e:
+                            self.error = e
                             return False
                         finally:
                             remoteFile.close()
@@ -137,9 +159,7 @@ class windows():
                 remoteFile.close()
                 f.close()
                 return True
-            except:
-                pass
+            except Exception as e:
+                self.error = e
         return False
 
-    def __del__(self):
-        self.disconnect()
