@@ -38,7 +38,7 @@ class windows():
         exitCode, response, error = self.executeCommand("shutdown -r -t 1 -f")  
         newUpTime = currentUpTime
         endTime = time.time()
-        while newUpTime >= currentUpTime or endTime - startTime < timeout:
+        while newUpTime >= currentUpTime and endTime - startTime < timeout:
             time.sleep(1)
             endTime = time.time()
             try:
@@ -73,25 +73,23 @@ class windows():
             return self.executeCommand(command,args,elevate)
 
     def upload(self,localFile,remotePath):
-        smbclient.delete_session(self.host)
         smbclient.register_session(self.host, username=self.username, password=self.password, connection_timeout=30)
         # single file
         if not os.path.isdir(localFile):
-            f = open(localFile, mode="rb")
-            remoteFile = smbclient.open_file("\\{0}\{1}".format(self.host,remotePath), mode="wb")
             try:
-                while True:
-                    part = f.read(4096)
-                    if not part:
-                        break
-                    remoteFile.write(part)
+                with open(localFile, mode="rb") as f:
+                    with smbclient.open_file("\\{0}\{1}".format(self.host,remotePath), mode="wb", buffering=0) as remoteFile:
+                        while True:
+                            part = f.read(4096)
+                            if not part:
+                                break
+                            remoteFile.write(part)
             except Exception as e:
                 self.error = e
-                return False
-            finally:
-                remoteFile.close()
-                f.close()
+                print(e)
                 smbclient.delete_session(self.host)
+                return False
+            smbclient.delete_session(self.host)
             return True
         # Directory
         else:
@@ -110,42 +108,38 @@ class windows():
                         if e.errno != errno.EEXIST:
                             return False
                 for _file in files:
-                    fullPath = os.path.join(root,_file)
-                    f = open(fullPath, mode="rb")
-                    fullPath=fullPath.replace("/","\\")
-                    remoteFile = smbclient.open_file("\\{0}\{1}\{2}".format(self.host,remotePath,fullPath[len(localFile)+1:]), mode="wb",)
                     try:
-                        while True:
-                            part = f.read(4096)
-                            if not part:
-                                break
-                            remoteFile.write(part)
+                        fullPath = os.path.join(root,_file)
+                        with open(fullPath, mode="rb")as f:
+                            fullPath=fullPath.replace("/","\\")
+                            with smbclient.open_file("\\{0}\{1}\{2}".format(self.host,remotePath,fullPath[len(localFile)+1:]), mode="wb", buffering=0) as remoteFile:
+                                while True:
+                                    part = f.read(4096)
+                                    if not part:
+                                        break
+                                    remoteFile.write(part)
                     except Exception as e:
                         self.error = e
-                        return False
-                    finally:
-                        remoteFile.close()
-                        f.close()
                         smbclient.delete_session(self.host)
+                        return False
+            smbclient.delete_session(self.host)
             return True
         return False
 
     def download(self,remoteFile,localPath):
-        smbclient.delete_session(self.host)
         smbclient.register_session(self.host, username=self.username, password=self.password,connection_timeout=30)
-        f = open(localPath, mode="wb")
         try:
-            remoteFile = smbclient.open_file("\\{0}\{1}".format(self.host,remoteFile), mode="rb")
-            while True:
-                part = remoteFile.read(4096)
-                if not part:
-                    break
-                f.write(part)
-            remoteFile.close()
-            f.close()
+            with open(localPath, mode="wb") as f:
+                with smbclient.open_file("\\{0}\{1}".format(self.host,remoteFile), mode="rb", buffering=0) as remoteFile:
+                    while True:
+                        part = remoteFile.read(4096)
+                        if not part:
+                            break
+                        f.write(part)
             smbclient.delete_session(self.host)
             return True
         except Exception as e:
             self.error = e
+            smbclient.delete_session(self.host)
         return False
 
