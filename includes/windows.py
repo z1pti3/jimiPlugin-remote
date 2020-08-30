@@ -32,28 +32,25 @@ class windows():
     def reboot(self,timeout):
         startTime = time.time()
         exitCode, currentUpTime, error = self.executeCommand("powershell.exe -nop -C \"((get-date) - (gcim Win32_OperatingSystem).LastBootUpTime).TotalSeconds\"")
-        if exitCode != 0:
+        if exitCode == None or exitCode != 0:
             self.error = "Unable to get current uptime of system"
             return False
         exitCode, response, error = self.executeCommand("shutdown -r -t 1 -f")  
-        newUpTime = currentUpTime
-        endTime = time.time()
-        while newUpTime >= currentUpTime and endTime - startTime < timeout:
-            time.sleep(1)
+        if exitCode != None and exitCode == 0:
+            newUpTime = currentUpTime
             endTime = time.time()
-            try:
-                exitCode, newUpTime, error = self.executeCommand("powershell.exe -nop -C \"((get-date) - (gcim Win32_OperatingSystem).LastBootUpTime).TotalSeconds\"")
-                if exitCode != 0:
-                    newUpTime = currentUpTime
-            except:
-                break
-        if exitCode == 0:
-            while endTime - startTime < timeout:
+            while newUpTime >= currentUpTime and endTime - startTime < timeout:
                 time.sleep(10)
                 endTime = time.time()
-                self.client = self.connect(self.host,self.username,self.password)
-                if self.client:
-                    return True
+                try:
+                    self.client = self.connect(self.host,self.username,self.password)
+                    if self.client:
+                        exitCode, newUpTime, error = self.executeCommand("powershell.exe -nop -C \"((get-date) - (gcim Win32_OperatingSystem).LastBootUpTime).TotalSeconds\"")
+                        if exitCode == None or exitCode != 0:
+                            newUpTime = currentUpTime
+                except:
+                    pass
+            return True
         else:
             self.error = "Unable to reboot server - command failed"
         return False
