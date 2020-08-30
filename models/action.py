@@ -94,11 +94,19 @@ class _remoteCommand(action._action):
                 client = persistentData["remote"]["client"]
         if client:
             exitCode, output, errors = client.command(command,elevate=self.elevate)
-            actionResult["result"] = True
-            actionResult["data"] = output
-            actionResult["errors"] = errors
-            actionResult["rc"] = exitCode
-            return actionResult
+            if exitCode != None:
+                actionResult["result"] = True
+                actionResult["data"] = output
+                actionResult["errors"] = errors
+                actionResult["rc"] = exitCode
+                return actionResult
+            else:
+                actionResult["result"] = False
+                actionResult["msg"] = client.error
+                actionResult["data"] = ""
+                actionResult["errors"] = ""
+                actionResult["rc"] = 255
+                return actionResult
         else:
             actionResult["result"] = False
             actionResult["rc"] = 403

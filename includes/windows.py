@@ -59,14 +59,18 @@ class windows():
         return False
 
     def executeCommand(self,command,args=[],elevate=False):
-        clientShell = self.client.open_shell()
-        commandId = self.client.run_command(clientShell,command, args)
-        stdout, stderr, exitCode = self.client.get_command_output(clientShell, commandId)
-        self.client.cleanup_command(clientShell, commandId)
-        self.client.close_shell(clientShell)
-        response = stdout.decode().strip()
-        errors = stderr.decode().strip()
-        return (exitCode, response, errors)
+        try:
+            clientShell = self.client.open_shell()
+            commandId = self.client.run_command(clientShell,command, args)
+            stdout, stderr, exitCode = self.client.get_command_output(clientShell, commandId)
+            self.client.cleanup_command(clientShell, commandId)
+            self.client.close_shell(clientShell)
+            response = stdout.decode().strip()
+            errors = stderr.decode().strip()
+            return (exitCode, response, errors)
+        except Exception as e:
+            self.error = e
+            return (None, None, None)
 
     def command(self, command, args=[], elevate=False):
         if self.client:
@@ -78,7 +82,7 @@ class windows():
         if not os.path.isdir(localFile):
             try:
                 with open(localFile, mode="rb") as f:
-                    with smbclient.open_file("\\{0}\{1}".format(self.host,remotePath), mode="wb", buffering=0) as remoteFile:
+                    with smbclient.open_file("\\{0}\{1}".format(self.host,remotePath), mode="wb") as remoteFile:
                         while True:
                             part = f.read(4096)
                             if not part:
@@ -112,7 +116,7 @@ class windows():
                         fullPath = os.path.join(root,_file)
                         with open(fullPath, mode="rb")as f:
                             fullPath=fullPath.replace("/","\\")
-                            with smbclient.open_file("\\{0}\{1}\{2}".format(self.host,remotePath,fullPath[len(localFile)+1:]), mode="wb", buffering=0) as remoteFile:
+                            with smbclient.open_file("\\{0}\{1}\{2}".format(self.host,remotePath,fullPath[len(localFile)+1:]), mode="wb") as remoteFile:
                                 while True:
                                     part = f.read(4096)
                                     if not part:
@@ -130,7 +134,7 @@ class windows():
         smbclient.register_session(self.host, username=self.username, password=self.password,connection_timeout=30)
         try:
             with open(localPath, mode="wb") as f:
-                with smbclient.open_file("\\{0}\{1}".format(self.host,remoteFile), mode="rb", buffering=0) as remoteFile:
+                with smbclient.open_file("\\{0}\{1}".format(self.host,remoteFile), mode="rb") as remoteFile:
                     while True:
                         part = remoteFile.read(4096)
                         if not part:
