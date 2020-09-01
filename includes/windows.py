@@ -66,7 +66,7 @@ class windows():
             errors = stderr.decode().strip()
             return (exitCode, response, errors)
         except Exception as e:
-            self.error = e
+            self.error = str(e)
             return (None, None, None)
 
     def command(self, command, args=[], elevate=False):
@@ -86,8 +86,7 @@ class windows():
                                 break
                             remoteFile.write(part)
             except Exception as e:
-                self.error = e
-                print(e)
+                self.error = str(e)
                 smbclient.delete_session(self.host)
                 return False
             smbclient.delete_session(self.host)
@@ -120,7 +119,7 @@ class windows():
                                         break
                                     remoteFile.write(part)
                     except Exception as e:
-                        self.error = e
+                        self.error = str(e)
                         smbclient.delete_session(self.host)
                         return False
             smbclient.delete_session(self.host)
@@ -140,7 +139,7 @@ class windows():
             smbclient.delete_session(self.host)
             return True
         except Exception as e:
-            self.error = e
+            self.error = str(e)
             smbclient.delete_session(self.host)
         return False
 
