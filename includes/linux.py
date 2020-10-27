@@ -1,6 +1,7 @@
 from paramiko import SSHClient, RSAKey, AutoAddPolicy
 from scp import SCPClient
 from pathlib import Path
+import os
 
 class linux():
     client = None
@@ -61,9 +62,15 @@ class linux():
                 return False
         return False
 
-    def download(self, remoteFile, localPath):
+    def download(self, remoteFile, localPath, createMissingFolders):
         if self.scp:
             try:
+                if createMissingFolders:
+                    splitChar = "\\"
+                    if splitChar not in localPath:
+                        splitChar = "/"
+                    if not os.path.isdir(localPath.rsplit(splitChar,1)[0]):
+                        os.makedirs(localPath.rsplit(splitChar,1)[0])
                 self.scp.get(remoteFile,localPath)
                 return True
             except:

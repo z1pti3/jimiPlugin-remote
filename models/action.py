@@ -143,6 +143,7 @@ class _remoteReboot(action._action):
 class _remoteDownload(action._action):
     remoteFile = str()
     localFile = str()
+    createMissingFolders = bool()
 
     def run(self,data,persistentData,actionResult):
         remoteFile = helpers.evalString(self.remoteFile,{"data" : data})
@@ -153,7 +154,7 @@ class _remoteDownload(action._action):
             if "client" in persistentData["remote"]:
                 client = persistentData["remote"]["client"]
         if client:
-            if client.download(remoteFile,localFile):
+            if client.download(remoteFile,localFile,self.createMissingFolders):
                 actionResult["result"] = True
                 actionResult["msg"] = "File transfered successful"
                 actionResult["rc"] = 0

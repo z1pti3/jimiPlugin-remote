@@ -130,13 +130,19 @@ class windows():
             return True
         return False
 
-    def download(self,remoteFile,localPath):
+    def download(self,remoteFile,localPath,createMissingFolders):
         try:
             smbclient.register_session(self.host, username=self.username, password=self.password,connection_timeout=30)
         except Exception as e:
             self.error = str(e)
             return False
         try:
+            if createMissingFolders:
+                splitChar = "\\"
+                if splitChar not in localPath:
+                    splitChar = "/"
+                if not os.path.isdir(localPath.rsplit(splitChar,1)[0]):
+                    os.makedirs(localPath.rsplit(splitChar,1)[0])
             with open(localPath, mode="wb") as f:
                 with smbclient.open_file("\\{0}\{1}".format(self.host,remoteFile), mode="rb") as remoteFile:
                     while True:
