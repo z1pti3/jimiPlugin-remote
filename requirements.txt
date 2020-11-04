@@ -2,3 +2,4 @@ paramiko
 pywinrm
 smbprotocol
 scp
+gssapi
