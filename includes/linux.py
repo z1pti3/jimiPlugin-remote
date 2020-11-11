@@ -41,10 +41,12 @@ class linux():
         # Not implimented yet!
         pass
 
-    def command(self, command, args=[], elevate=False):
+    def command(self, command, args=[], elevate=False, runAs=None):
         if self.client:
             if elevate:
                 stdin, stdout, stderr = self.client.exec_command("sudo {0} {1}".format(command, " ".join(args)).strip())
+            elif runAs:
+                stdin, stdout, stderr = self.client.exec_command("sudo -u {0} {1} {2}".format(runAs,command, " ".join(args)).strip())
             else:
                 stdin, stdout, stderr = self.client.exec_command("{0} {1}".format(command, " ".join(args)).strip())
             exitCode = stdout.channel.recv_exit_status()
