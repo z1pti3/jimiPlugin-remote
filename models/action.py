@@ -36,7 +36,7 @@ class _remoteConnectLinux(action._action):
             else:
                 client = linux.linux(host,user,password=password)
         
-        client.connect()
+        # client.connect()
         if client != None:
             persistentData["remote"]={}
             persistentData["remote"]["client"] = client
@@ -66,9 +66,7 @@ class _remoteLinuxStartPortForward(action._action):
                 client = persistentData["remote"]["client"]
     
         if client:       
-            print("Starting Connection")            
-            test,port = client.start_port_forward()
-
+            port = client.start_port_forward()
             persistentData["remote"]["port"] = port
             persistentData["remote"]["portForwardStatus"] = True
             actionResult["result"] = True
@@ -85,16 +83,15 @@ class _remoteLinuxStartPortForward(action._action):
 class _remoteLinuxStopPortForward(action._action):
 
     def run(self,data,persistentData,actionResult):
-
         client = None
         if "remote" in persistentData:
             if "client" in persistentData["remote"]:
                 client = persistentData["remote"]["client"]
             if "port" in persistentData["remote"]:
                 port = persistentData["remote"]["port"]
+        
         if client and port:
-            print("Stopping Connection")       
-            client.stop_port_forward(client)
+            client.stop_port_forward()
             actionResult["result"] = True
             actionResult["rc"] = 0
             persistentData["remote"]["portForwardStatus"] = False
