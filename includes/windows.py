@@ -94,7 +94,11 @@ class windows():
             return self.executeCommand(command,args,elevate,runAs)
 
     def upload(self,localFile,remotePath):
-        smbclient.register_session(self.host, username=self.username, password=self.password, connection_timeout=30)
+        try:
+            smbclient.register_session(self.host, username=self.username, password=self.password, connection_timeout=30)
+        except Exception as e:
+            self.error = str(e)
+            return False
         # single file
         if not os.path.isdir(localFile):
             try:
@@ -146,9 +150,19 @@ class windows():
             return True
         return False
 
-    def download(self,remoteFile,localPath):
-        smbclient.register_session(self.host, username=self.username, password=self.password,connection_timeout=30)
+    def download(self,remoteFile,localPath,createMissingFolders):
         try:
+            smbclient.register_session(self.host, username=self.username, password=self.password,connection_timeout=30)
+        except Exception as e:
+            self.error = str(e)
+            return False
+        try:
+            if createMissingFolders:
+                splitChar = "\\"
+                if splitChar not in localPath:
+                    splitChar = "/"
+                if not os.path.isdir(localPath.rsplit(splitChar,1)[0]):
+                    os.makedirs(localPath.rsplit(splitChar,1)[0])
             with open(localPath, mode="wb") as f:
                 with smbclient.open_file("\\{0}\{1}".format(self.host,remoteFile), mode="rb") as remoteFile:
                     while True:
