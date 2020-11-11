@@ -62,7 +62,7 @@ class windows():
                 if runAs == "user":
                     smbclient.register_session(self.host, username=self.username, password=self.password, connection_timeout=30)
                     if args:
-                        command = "{0}\n[murrayju.ProcessExtensions.ProcessExtensions]::StartProcessAsCurrentUser('{1}','{2}')\n".format(powershellRunAsLoggedInUser,command," ".join(args))
+                        command = "{0}\n[murrayju.ProcessExtensions.ProcessExtensions]::StartProcessAsCurrentUser('{1}','{2}')\nrm c:\\windows\\temp\\jimiRunAsUser.ps1".format(powershellRunAsLoggedInUser,command," ".join(args))
                     else:
                         command = "{0}\n[murrayju.ProcessExtensions.ProcessExtensions]::StartProcessAsCurrentUser('{1}')\nrm c:\\windows\\temp\\jimiRunAsUser.ps1".format(powershellRunAsLoggedInUser,command)
                     with smbclient.open_file("\\{0}\{1}".format(self.host,"c$\\windows\\temp\\jimiRunAsUser.ps1"), mode="wb") as remoteFile:
