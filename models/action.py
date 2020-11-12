@@ -22,7 +22,7 @@ class _remoteConnectLinux(action._action):
         if self.isPortForward:
             if keyfile != "":
                 if password:
-                    client = linux.linux(host,user,keyFile=keyfile,password=password,port_forward=True,port=port)
+                    client= linux.linux(host,user,keyFile=keyfile,password=password,port_forward=True,port=port)
                 else:
                     client = linux.linux(host,user,keyFile=keyfile,port_forward=True,port=port)
             else:
@@ -35,11 +35,14 @@ class _remoteConnectLinux(action._action):
                     client = linux.linux(host,user,keyFile=keyfile)
             else:
                 client = linux.linux(host,user,password=password)
-        
-        # client.connect()
+
         if client != None:
             persistentData["remote"]={}
             persistentData["remote"]["client"] = client
+
+            if self.isPortForward:
+                # print(f"MAIN port is {client.tunnelPort}")
+                persistentData["remote"]["port"] = client.tunnelPort
             actionResult["result"] = True
             actionResult["rc"] = 0
             actionResult["msg"] = "Connection successful"
@@ -66,7 +69,9 @@ class _remoteLinuxStartPortForward(action._action):
                 client = persistentData["remote"]["client"]
     
         if client:       
-            port = client.start_port_forward()
+            print("Starting Connection")            
+            test,port = client.start_port_forward()
+
             persistentData["remote"]["port"] = port
             persistentData["remote"]["portForwardStatus"] = True
             actionResult["result"] = True
@@ -83,15 +88,16 @@ class _remoteLinuxStartPortForward(action._action):
 class _remoteLinuxStopPortForward(action._action):
 
     def run(self,data,persistentData,actionResult):
+
         client = None
         if "remote" in persistentData:
             if "client" in persistentData["remote"]:
                 client = persistentData["remote"]["client"]
             if "port" in persistentData["remote"]:
                 port = persistentData["remote"]["port"]
-        
         if client and port:
-            client.stop_port_forward()
+            print("Stopping Connection")       
+            client.stop_port_forward(client)
             actionResult["result"] = True
             actionResult["rc"] = 0
             persistentData["remote"]["portForwardStatus"] = False
@@ -158,6 +164,8 @@ class _remoteCommand(action._action):
                 client = persistentData["remote"]["client"]
         if client:
             exitCode, output, errors = client.command(command,elevate=self.elevate)
+
+            print(output)
             if exitCode != None:
                 actionResult["result"] = True
                 actionResult["data"] = output
