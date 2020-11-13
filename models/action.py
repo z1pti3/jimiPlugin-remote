@@ -155,6 +155,7 @@ class _remoteDisconnect(action._action):
 class _remoteCommand(action._action):
     command = str()
     elevate = bool()
+    runAs = str()
 
     def run(self,data,persistentData,actionResult):
         command = helpers.evalString(self.command,{"data" : data})
@@ -163,9 +164,8 @@ class _remoteCommand(action._action):
             if "client" in persistentData["remote"]:
                 client = persistentData["remote"]["client"]
         if client:
-            exitCode, output, errors = client.command(command,elevate=self.elevate)
-
-            print(output)
+            exitCode, output, errors = client.command(command,elevate=self.elevate,runAs=self.runAs)
+            
             if exitCode != None:
                 actionResult["result"] = True
                 actionResult["data"] = output
