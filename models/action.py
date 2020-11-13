@@ -7,21 +7,42 @@ class _remoteConnectLinux(action._action):
     user = str()
     keyfile = str()
     password = str()
+    isPortForward = bool()
+    port_forward = str()
+    
 
     def run(self,data,persistentData,actionResult):
-        host = helpers.evalString(self.host,{"data" : data})
-        user = helpers.evalString(self.user,{"data" : data})
+        host    = helpers.evalString(self.host,{"data" : data})
+        user    = helpers.evalString(self.user,{"data" : data})
+        port    = helpers.evalString(self.port_forward,{"data" : data})
         if self.password.startswith("ENC"):
             password = auth.getPasswordFromENC(self.password)
         keyfile = helpers.evalString(self.keyfile,{"data" : data})
 
-        if keyfile != "":
-            client = linux.linux(host,user,keyFile=keyfile)
+        if self.isPortForward:
+            if keyfile != "":
+                if password:
+                    client= linux.linux(host,user,keyFile=keyfile,password=password,port_forward=True,port=port)
+                else:
+                    client = linux.linux(host,user,keyFile=keyfile,port_forward=True,port=port)
+            else:
+                client = linux.linux(host,user,password=password)
         else:
-            client = linux.linux(host,user,password=password)
-        if client.client != None:
+            if keyfile != "":
+                if password:
+                    client = linux.linux(host,user,keyFile=keyfile,password=password)
+                else:
+                    client = linux.linux(host,user,keyFile=keyfile)
+            else:
+                client = linux.linux(host,user,password=password)
+
+        if client != None:
             persistentData["remote"]={}
             persistentData["remote"]["client"] = client
+
+            if self.isPortForward:
+                # print(f"MAIN port is {client.tunnelPort}")
+                persistentData["remote"]["port"] = client.tunnelPort
             actionResult["result"] = True
             actionResult["rc"] = 0
             actionResult["msg"] = "Connection successful"
@@ -37,6 +58,55 @@ class _remoteConnectLinux(action._action):
             self.password = "ENC {0}".format(auth.getENCFromPassword(value))
             return True
         return super(_remoteConnectLinux, self).setAttribute(attr,value,sessionData=sessionData)
+
+class _remoteLinuxStartPortForward(action._action):
+
+    def run(self,data,persistentData,actionResult):
+
+        client = None
+        if "remote" in persistentData:
+            if "client" in persistentData["remote"]:
+                client = persistentData["remote"]["client"]
+    
+        if client:       
+            print("Starting Connection")            
+            test,port = client.start_port_forward()
+
+            persistentData["remote"]["port"] = port
+            persistentData["remote"]["portForwardStatus"] = True
+            actionResult["result"] = True
+            actionResult["rc"] = 0
+            actionResult["portForwardStatus"] = True
+
+        else:
+            actionResult["result"] = False
+            actionResult["rc"] = 403
+            actionResult["msg"] = "No connection found"
+            return actionResult
+
+
+class _remoteLinuxStopPortForward(action._action):
+
+    def run(self,data,persistentData,actionResult):
+
+        client = None
+        if "remote" in persistentData:
+            if "client" in persistentData["remote"]:
+                client = persistentData["remote"]["client"]
+            if "port" in persistentData["remote"]:
+                port = persistentData["remote"]["port"]
+        if client and port:
+            print("Stopping Connection")       
+            client.stop_port_forward(client)
+            actionResult["result"] = True
+            actionResult["rc"] = 0
+            persistentData["remote"]["portForwardStatus"] = False
+
+        else:
+            actionResult["result"] = False
+            actionResult["rc"] = 403
+            actionResult["msg"] = "No connection found"
+            return actionResult
 
 
 class _remoteConnectWindows(action._action):
@@ -95,6 +165,7 @@ class _remoteCommand(action._action):
                 client = persistentData["remote"]["client"]
         if client:
             exitCode, output, errors = client.command(command,elevate=self.elevate,runAs=self.runAs)
+            
             if exitCode != None:
                 actionResult["result"] = True
                 actionResult["data"] = output
