@@ -12,6 +12,8 @@ class _remote(plugin._plugin):
         model.registerModel("remoteUpload","_remoteUpload","_action","plugins.remote.models.action")
         model.registerModel("remoteDisconnect","_remoteDisconnect","_action","plugins.remote.models.action")
         model.registerModel("remoteReboot","_remoteReboot","_action","plugins.remote.models.action")
+        model.registerModel("linuxStartPortForward","_remoteLinuxStartPortForward","_action","plugins.remote.models.action")        
+        model.registerModel("linuxStopPortForward","_remoteLinuxStopPortForward","_action","plugins.remote.models.action")           
         return True
 
     def uninstall(self):
