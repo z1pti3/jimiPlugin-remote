@@ -178,12 +178,14 @@ class windows():
         return False
 
 powershellRunAsLoggedInUser = """
-$user = Get-WmiObject -Class win32_computersystem | % Username
-$username = $user.split("\\")[1]
+$user = WMIC COMPUTERSYSTEM GET USERNAME | Select-String '\\\\'
+$username = $user.line.split("\\")[1]
+$user = $user.line.trim()
+$username = $username.trim()
 schtasks /create /tn "RunCMD" /sc once /tr "cmd /c <CMD> >> c:\\users\\$username\\appdata\\local\\temp\\RunCMDOutput.txt 2>&1" /st 23:59 /ru $user | Out-Null
 schtasks /run /tn "RunCMD" | Out-Null
 $a = 0
-while (((Get-ScheduledTask -TaskName 'RunCMD').State  -ne 'Ready') -or ($a -gt 60)) {
+while (((schtasks.exe /query /tn "RunCMD" /v /fo CSV | ConvertFrom-Csv | Select-Object -Property "Status").Status  -ne 'Ready') -and ($a -lt 60)) {
     Start-Sleep 1
     $a = $a + 1
 }
