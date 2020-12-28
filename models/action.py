@@ -17,6 +17,8 @@ class _remoteConnectLinux(action._action):
         port    = helpers.evalString(self.port_forward,{"data" : data})
         if self.password.startswith("ENC"):
             password = auth.getPasswordFromENC(self.password)
+        else:
+            password = ""
         keyfile = helpers.evalString(self.keyfile,{"data" : data})
 
         if self.isPortForward:
@@ -29,14 +31,14 @@ class _remoteConnectLinux(action._action):
                 client = linux.linux(host,user,password=password)
         else:
             if keyfile != "":
-                if password:
+                if password != "":
                     client = linux.linux(host,user,keyFile=keyfile,password=password)
                 else:
                     client = linux.linux(host,user,keyFile=keyfile)
             else:
                 client = linux.linux(host,user,password=password)
 
-        if client != None:
+        if client.client != None:
             persistentData["remote"]={}
             persistentData["remote"]["client"] = client
 
