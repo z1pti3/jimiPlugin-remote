@@ -118,6 +118,8 @@ class linux():
             while not stdout.channel.exit_status_ready():
                 if stdout.channel.recv_ready():
                     response += stdout.readlines()
+                else:
+                    time.sleep(0.25)
             response += stdout.readlines()
             errors = stderr.readlines()
             exitCode = stdout.channel.recv_exit_status() # Cant be killed by system exit exception
