@@ -16,7 +16,9 @@ def runRemoteFunction(runRemote,persistentData,functionCall,functionInputDict):
                     functionStr = textwrap.dedent(functionStr)
                 functionStr=functionStr.replace("(self,functionInputDict)","(functionInputDict)") + "\nprint({0}({1}))".format(functionCall.__name__,functionInputDict)
                 client = persistentData["remote"]["client"]
-                exitCode, stdout, stderr = client.command("python3 -c \"import sys;exec(sys.argv[1].replace('\\\\\\n','\\\\n'))\" \"{0}\"".format(functionStr.replace("\n","\\\\n").replace("\"","\\\"")),elevate=True)
+                cmd = "python3 -c \"import sys;exec(sys.argv[1].replace('\\\\\\n','\\\\n'))\" \"{0}\"".format(functionStr.replace("\n","\\\\n").replace("\"","\\\""))
+                print(cmd)
+                exitCode, stdout, stderr = client.command(cmd,elevate=True)
                 stdout = "\n".join(stdout)
                 stderr = "\n".join(stderr)
                 if exitCode == 0:

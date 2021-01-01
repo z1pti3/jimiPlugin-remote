@@ -158,6 +158,7 @@ class _remoteCommand(action._action):
     command = str()
     elevate = bool()
     runAs = str()
+    timeout = 300
 
     def run(self,data,persistentData,actionResult):
         command = helpers.evalString(self.command,{"data" : data})
@@ -166,7 +167,7 @@ class _remoteCommand(action._action):
             if "client" in persistentData["remote"]:
                 client = persistentData["remote"]["client"]
         if client:
-            exitCode, output, errors = client.command(command,elevate=self.elevate,runAs=self.runAs)
+            exitCode, output, errors = client.command(command,elevate=self.elevate,runAs=self.runAs,timeout=self.timeout)
             
             if exitCode != None:
                 actionResult["result"] = True

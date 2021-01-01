@@ -56,7 +56,8 @@ class windows():
             self.error = "Unable to reboot server - command failed"
         return False
 
-    def executeCommand(self,command,args=[],elevate=False,runAs=None):
+    # Timeout not implemented
+    def executeCommand(self,command,args=[],elevate=False,runAs=None,timeout=300):
         try:
             if runAs:
                 if runAs == "user":
@@ -89,9 +90,10 @@ class windows():
             self.error = str(e)
         return (None, None, None)
 
-    def command(self, command, args=[], elevate=False, runAs=None):
+    # Timeout not implimented yet
+    def command(self, command, args=[], elevate=False, runAs=None, timeout=300):
         if self.client:
-            return self.executeCommand(command,args,elevate,runAs)
+            return self.executeCommand(command,args,elevate,runAs,timeout)
 
     def upload(self,localFile,remotePath):
         try:
