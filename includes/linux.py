@@ -108,24 +108,28 @@ class linux():
 
     def command(self, command, args=[], elevate=False, runAs=None, timeout=300):
         if self.client:
-            if elevate:
-                stdin, stdout, stderr = self.client.exec_command("sudo {0} {1}".format(command, " ".join(args)).strip(),timeout=timeout)
-            elif runAs:
-                stdin, stdout, stderr = self.client.exec_command("sudo -u {0} {1} {2}".format(runAs,command, " ".join(args)).strip(),timeout=timeout)
-            else:
-                stdin, stdout, stderr = self.client.exec_command("{0} {1}".format(command, " ".join(args)).strip(),timeout=timeout)
-            response=[]
-            while not stdout.channel.exit_status_ready():
-                if stdout.channel.recv_ready():
-                    response += stdout.readlines()
+            if timeout == 0:
+                timeout = 300
+            try:
+                if elevate:
+                    stdin, stdout, stderr = self.client.exec_command("sudo {0} {1}".format(command, " ".join(args)).strip(),timeout=timeout)
+                elif runAs:
+                    stdin, stdout, stderr = self.client.exec_command("sudo -u {0} {1} {2}".format(runAs,command, " ".join(args)).strip(),timeout=timeout)
                 else:
-                    time.sleep(0.25)
-            response += stdout.readlines()
-            errors = stderr.readlines()
-            exitCode = stdout.channel.recv_exit_status() # Cant be killed by system exit exception
-            return (exitCode, response, errors)
+                    stdin, stdout, stderr = self.client.exec_command("{0} {1}".format(command, " ".join(args)).strip(),timeout=timeout)
+                response=[]
+                while not stdout.channel.exit_status_ready():
+                    if stdout.channel.recv_ready():
+                        response += stdout.readlines()
+                    else:
+                        time.sleep(0.25)
+                response += stdout.readlines()
+                errors = stderr.readlines()
+                exitCode = stdout.channel.recv_exit_status() # Cant be killed by system exit exception
+                return (exitCode, response, errors)
+            except Exception as e:
+                return (503, "", "{0}".format(e))
 
-    
     def upload(self, localFile, remotePath):
         if self.scp:
             try:
