@@ -1,7 +1,7 @@
 from core import plugin, model
 
 class _remote(plugin._plugin):
-    version = 1.0
+    version = 1.1
 
     def install(self):
         # Register models
@@ -13,8 +13,10 @@ class _remote(plugin._plugin):
         model.registerModel("remoteDisconnect","_remoteDisconnect","_action","plugins.remote.models.action")
         model.registerModel("remoteReboot","_remoteReboot","_action","plugins.remote.models.action")
         model.registerModel("linuxStartPortForward","_remoteLinuxStartPortForward","_action","plugins.remote.models.action")        
-        model.registerModel("linuxStopPortForward","_remoteLinuxStopPortForward","_action","plugins.remote.models.action")           
+        model.registerModel("linuxStopPortForward","_remoteLinuxStopPortForward","_action","plugins.remote.models.action")   
+        model.registerModel("remotePullWinEvents","_remotePullWinEvents","_trigger","plugins.remote.models.trigger")          
         return True
+        
 
     def uninstall(self):
         # deregister models
@@ -25,9 +27,12 @@ class _remote(plugin._plugin):
         model.deregisterModel("remoteUpload","_remoteUpload","_action","plugins.remote.models.action")
         model.deregisterModel("remoteDisconnect","_remoteDisconnect","_action","plugins.remote.models.action")
         model.deregisterModel("remoteReboot","_remoteReboot","_action","plugins.remote.models.action")
+        model.deregisterModel("remotePullWinEvents","_remotePullWinEvents","_trigger","plugins.remote.models.trigger")   
         return True
 
     def upgrade(self,LatestPluginVersion):
+        if self.version < 1.1:
+            model.registerModel("remotePullWinEvents","_remotePullWinEvents","_trigger","plugins.remote.models.trigger")   
         if self.version < 0.7:
             model.registerModel("remoteReboot","_remoteReboot","_action","plugins.remote.models.action")
         if self.version < 0.5:
