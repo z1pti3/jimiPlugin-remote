@@ -180,19 +180,6 @@ class windows():
         return False
 
 powershellRunAsLoggedInUser = """
-$user = WMIC COMPUTERSYSTEM GET USERNAME | Select-String '\\\\'
-$username = $user.line.split("\\")[1]
-$user = $user.line.trim()
-$username = $username.trim()
-schtasks /create /tn "RunCMD" /sc once /tr "cmd /c <CMD> >> c:\\users\\$username\\appdata\\local\\temp\\RunCMDOutput.txt 2>&1" /st 23:59 /ru $user | Out-Null
-schtasks /run /tn "RunCMD" | Out-Null
-$a = 0
-while (((schtasks.exe /query /tn "RunCMD" /v /fo CSV | ConvertFrom-Csv | Select-Object -Property "Status").Status  -ne 'Ready') -and ($a -lt 60)) {
-    Start-Sleep 1
-    $a = $a + 1
-}
-schtasks /DELETE /F /TN "RunCMD"  | Out-Null
-type c:\\users\\$username\\appdata\\local\\temp\\RunCMDOutput.txt
-rm c:\\users\\$username\\appdata\\local\\temp\\RunCMDOutput.txt
+$user = WMIC COMPUTERSYSTEM GET USERNAME | Select-String \"\\\\\"; $username = $user.line.split(\"\\\")[1]; $user = $user.line.trim(); $usersid = (New-Object -ComObject Microsoft.DiskQuota).TranslateLogonNameToSID((Get-WmiObject -Class Win32_ComputerSystem).Username) ; $userprofile = gwmi win32_userprofile | select localpath, sid |  Where-Object {$_.sid -eq $usersid}; $userprofilepath = $userprofile.localpath ;$random = get-random ; schtasks /create /st 23:59 /ru $user /f /tn \"$random\" /sc once /tr \"cmd /c <CMD> >> $userprofilepath\\appdata\\local\\temp\\$random.txt 2>&1  & echo $random >> $userprofilepath\\appdata\\local\\temp\\$random.txt\"; schtasks /run /tn \"$random\" | Out-Null; $a = 0; $taskresultdata = ((schtasks.exe /query /tn \"$random\" /v /fo CSV | ConvertFrom-Csv | Select-Object) 2> $null); while (($taskresultdata.\"Last Run Time\" -eq \"N/A\" -or $taskresultdata.\"Last Run Time\" -eq $null -or $taskresultdata.\"Last Run Time\" -eq \"30/11/1999 00:00:00\" -or $taskresultdata.\"Status\" -ne \"Ready\") -and ($a -lt 120)){Start-Sleep 1; $a = $a + 1; $taskresultdata = ((schtasks.exe /query /tn \"$random\" /v /fo CSV | ConvertFrom-Csv | Select-Object) 2> $null)};write-host \"Out of schtasks run check!\";$filetocheck = $userprofilepath+\"\\appdata\\local\\temp\\\"+$random+\".txt\"; $fileExists = (Test-Path $fileToCheck -PathType leaf); while (($fileExists -eq $False) -and ($a -lt 60)){Start-Sleep 1; $a = $a + 1; write-host $a; $fileExists = (Test-Path $fileToCheck -PathType leaf)};$result = (Get-Content $userprofilepath\\appdata\\local\\temp\\$random.txt | %{$_ -match \"$random\"});while (($result[$result.count -1] -eq $False) -and ($a -lt 60)){Start-Sleep 1; write-host $a; $result = (Get-Content $userprofilepath\\appdata\\local\\temp\\$random.txt | %{$_ -match \"$random\"});write-host $result[$result.count -1];$a = $a + 1};write-host \"Out of EOF check!\"; type $userprofilepath\\appdata\\local\\temp\\$random.txt;start-sleep 1;rm $userprofilepath\\appdata\\local\\temp\\$random.txt;schtasks /delete /f /tn $random
 """
 
