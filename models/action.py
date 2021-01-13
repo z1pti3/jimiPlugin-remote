@@ -236,7 +236,7 @@ class _remoteDownload(action._action):
                 return actionResult
 
         actionResult["result"] = False
-        actionResult["msg"] = "File transfer failed"
+        actionResult["msg"] = "File transfer failed - {0}".format(client.error)
         actionResult["rc"] = 403
         return actionResult
 
