@@ -1,6 +1,6 @@
 from core import settings, helpers, auth
 from core.models import action
-from plugins.remote.includes import linux, windows
+from plugins.remote.includes import linux, windows, fortigate
 
 class _remoteConnectLinux(action._action):
     host = str()
@@ -140,6 +140,46 @@ class _remoteConnectWindows(action._action):
             self.password = "ENC {0}".format(auth.getENCFromPassword(value))
             return True
         return super(_remoteConnectWindows, self).setAttribute(attr,value,sessionData=sessionData)
+
+class _remoteConnectFortigate(action._action):
+    host = str()
+    port = str()
+    deviceHostname = str()
+    user = str()
+    password = str()
+    maxRecvTime = 5
+
+    def run(self,data,persistentData,actionResult):
+        host = helpers.evalString(self.host,{"data" : data})
+        port = helpers.evalString(self.port,{"data" : data})
+        deviceHostname = helpers.evalString(self.deviceHostname,{"data" : data})
+        user = helpers.evalString(self.user,{"data" : data})
+        if self.password.startswith("ENC"):
+            password = auth.getPasswordFromENC(self.password)
+        else:
+            password = ""
+
+        client = fortigate.fortigate(host,deviceHostname,user,password=password,port=port,maxRecvTime=self.maxRecvTime)
+
+        if client.client != None:
+            persistentData["remote"]={}
+            persistentData["remote"]["client"] = client
+
+            actionResult["result"] = True
+            actionResult["rc"] = 0
+            actionResult["msg"] = "Connection successful"
+            return actionResult
+        else:
+            actionResult["result"] = False
+            actionResult["rc"] = 403
+            actionResult["msg"] = "Connection failed - {0}".format(client.error)
+            return actionResult
+
+    def setAttribute(self,attr,value,sessionData=None):
+        if attr == "password" and not value.startswith("ENC "):
+            self.password = "ENC {0}".format(auth.getENCFromPassword(value))
+            return True
+        return super(_remoteConnectFortigate, self).setAttribute(attr,value,sessionData=sessionData)
 
 class _remoteDisconnect(action._action):
     def run(self,data,persistentData,actionResult):

@@ -1,7 +1,7 @@
 from core import plugin, model
 
 class _remote(plugin._plugin):
-    version = 1.1
+    version = 1.2
 
     def install(self):
         # Register models
@@ -14,7 +14,8 @@ class _remote(plugin._plugin):
         model.registerModel("remoteReboot","_remoteReboot","_action","plugins.remote.models.action")
         model.registerModel("linuxStartPortForward","_remoteLinuxStartPortForward","_action","plugins.remote.models.action")        
         model.registerModel("linuxStopPortForward","_remoteLinuxStopPortForward","_action","plugins.remote.models.action")   
-        model.registerModel("remotePullWinEvents","_remotePullWinEvents","_trigger","plugins.remote.models.trigger")          
+        model.registerModel("remotePullWinEvents","_remotePullWinEvents","_trigger","plugins.remote.models.trigger")      
+        model.registerModel("remoteConnectFortigate","_remoteConnectFortigate","_action","plugins.remote.models.action")
         return True
         
 
@@ -27,7 +28,8 @@ class _remote(plugin._plugin):
         model.deregisterModel("remoteUpload","_remoteUpload","_action","plugins.remote.models.action")
         model.deregisterModel("remoteDisconnect","_remoteDisconnect","_action","plugins.remote.models.action")
         model.deregisterModel("remoteReboot","_remoteReboot","_action","plugins.remote.models.action")
-        model.deregisterModel("remotePullWinEvents","_remotePullWinEvents","_trigger","plugins.remote.models.trigger")   
+        model.deregisterModel("remotePullWinEvents","_remotePullWinEvents","_trigger","plugins.remote.models.trigger") 
+        model.deregisterModel("remoteConnectFortigate","_remoteConnectFortigate","_action","plugins.remote.models.action")    
         return True
 
     def upgrade(self,LatestPluginVersion):
@@ -43,6 +45,10 @@ class _remote(plugin._plugin):
             model.registerModel("remoteDownload","_remoteDownload","_action","plugins.remote.models.action")
         if self.version < 0.2:
             model.registerModel("remoteConnectWindows","_remoteConnectWindows","_action","plugins.remote.models.action")
+        if self.version < 1.2:
+            model.registerModel("remoteConnectFortigate","_remoteConnectFortigate","_action","plugins.remote.models.action")
+
+        return True
 
 
 
