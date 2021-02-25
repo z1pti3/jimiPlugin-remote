@@ -24,7 +24,7 @@ class fortigate():
             client.connect(host, username=username, password=password, look_for_keys=True, timeout=5000)
             self.channel = client.invoke_shell()
             detectedDevice = self.channel.recv(len(self.deviceHostname)+2).decode().strip()
-            if detectedDevice != "{0} #".format(self.deviceHostname):
+            if detectedDevice != "{0} #".format(self.deviceHostname) or detectedDevice != "{0} $".format(self.deviceHostname):
                 self.error = "Device detected name does not match the device name provided."
                 self.disconnect
                 return None
@@ -47,7 +47,7 @@ class fortigate():
                 if recvBuffer.split('\n')[-1] == "--More--":
                     self.channel.send(" ")
                     recvBuffer = recvBuffer[:-8]
-                elif re.match(r"^{0} (#|\([a-z]+\) #)$".format(self.deviceHostname) ,recvBuffer.split('\n')[-1]):
+                elif re.match(r"^{0} ((#|\$)|\([a-z]+\) (#|\$))$".format(self.deviceHostname) ,recvBuffer.split('\n')[-1]):
                     break 
             time.sleep(0.1)
         return recvBuffer
