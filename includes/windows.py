@@ -23,6 +23,11 @@ class windows():
         
     def connect(self,host,username,password):
         client = Protocol(endpoint="http://{0}:5985/wsman".format(host),transport="ntlm",username=username,password=password,read_timeout_sec=30)
+        try:
+            smbclient.register_session(self.host, username=self.username, password=self.password, connection_timeout=30)
+        except Exception as e:
+            self.error = str(e)
+            return None
         return client
 
     def disconnect(self):
@@ -61,7 +66,6 @@ class windows():
         try:
             if runAs:
                 if runAs == "user":
-                    smbclient.register_session(self.host, username=self.username, password=self.password, connection_timeout=30)
                     if args:
                         command = "{0}\nrm c:\\windows\\temp\\jimiRunAsUser.ps1".format(powershellRunAsLoggedInUser.replace("<CMD>",command))
                     else:
@@ -96,11 +100,6 @@ class windows():
             return self.executeCommand(command,args,elevate,runAs,timeout)
 
     def upload(self,localFile,remotePath):
-        try:
-            smbclient.register_session(self.host, username=self.username, password=self.password, connection_timeout=30)
-        except Exception as e:
-            self.error = str(e)
-            return False
         # single file
         if not os.path.isdir(localFile):
             try:
@@ -113,9 +112,7 @@ class windows():
                             remoteFile.write(part)
             except Exception as e:
                 self.error = str(e)
-                smbclient.delete_session(self.host)
                 return False
-            smbclient.delete_session(self.host)
             return True
         # Directory
         else:
@@ -146,18 +143,11 @@ class windows():
                                     remoteFile.write(part)
                     except Exception as e:
                         self.error = str(e)
-                        smbclient.delete_session(self.host)
                         return False
-            smbclient.delete_session(self.host)
             return True
         return False
 
     def download(self,remoteFile,localPath,createMissingFolders):
-        try:
-            smbclient.register_session(self.host, username=self.username, password=self.password,connection_timeout=30)
-        except Exception as e:
-            self.error = str(e)
-            return False
         try:
             if createMissingFolders:
                 splitChar = "\\"
@@ -172,11 +162,9 @@ class windows():
                         if not part:
                             break
                         f.write(part)
-            smbclient.delete_session(self.host)
             return True
         except Exception as e:
             self.error = str(e)
-            smbclient.delete_session(self.host)
         return False
 
 powershellRunAsLoggedInUser = """
