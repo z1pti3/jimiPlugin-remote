@@ -10,16 +10,15 @@ class _remoteConnectLinux(action._action):
     isPortForward = bool()
     port_forward = str()
     
-
-    def run(self,data,persistentData,actionResult):
-        host    = helpers.evalString(self.host,{"data" : data})
-        user    = helpers.evalString(self.user,{"data" : data})
-        port    = helpers.evalString(self.port_forward,{"data" : data})
+    def doAction(self,data):
+        host    = helpers.evalString(self.host,{"data" : data["flowData"]})
+        user    = helpers.evalString(self.user,{"data" : data["flowData"]})
+        port    = helpers.evalString(self.port_forward,{"data" : data["flowData"]})
         if self.password.startswith("ENC"):
             password = auth.getPasswordFromENC(self.password)
         else:
             password = ""
-        keyfile = helpers.evalString(self.keyfile,{"data" : data})
+        keyfile = helpers.evalString(self.keyfile,{"data" : data["flowData"]})
 
         if self.isPortForward:
             if keyfile != "":
@@ -39,21 +38,14 @@ class _remoteConnectLinux(action._action):
                 client = linux.linux(host,user,password=password)
 
         if client.client != None:
-            persistentData["remote"]={}
-            persistentData["remote"]["client"] = client
+            data["eventData"]["remote"]={}
+            data["eventData"]["remote"]["client"] = client
 
             if self.isPortForward:
-                # print(f"MAIN port is {client.tunnelPort}")
-                persistentData["remote"]["port"] = client.tunnelPort
-            actionResult["result"] = True
-            actionResult["rc"] = 0
-            actionResult["msg"] = "Connection successful"
-            return actionResult
+                data["eventData"]["remote"]["port"] = client.tunnelPort
+            return {"result" : True, "rc" : 0, "msg" : "Connection successful"}
         else:
-            actionResult["result"] = False
-            actionResult["rc"] = 403
-            actionResult["msg"] = "Connection failed - {0}".format(client.error)
-            return actionResult
+            return {"result" : False, "rc" : 403, "msg" : "Connection failed - {0}".format(client.error)}
 
     def setAttribute(self,attr,value,sessionData=None):
         if attr == "password" and not value.startswith("ENC "):
@@ -63,77 +55,53 @@ class _remoteConnectLinux(action._action):
 
 class _remoteLinuxStartPortForward(action._action):
 
-    def run(self,data,persistentData,actionResult):
+    def doAction(self,data):
+        try:
+            client = data["eventData"]["remote"]["client"]
+        except KeyError:
+            client = None
 
-        client = None
-        if "remote" in persistentData:
-            if "client" in persistentData["remote"]:
-                client = persistentData["remote"]["client"]
-    
-        if client:       
-            print("Starting Connection")            
+        if client:                
             test,port = client.start_port_forward()
-
-            persistentData["remote"]["port"] = port
-            persistentData["remote"]["portForwardStatus"] = True
-            actionResult["result"] = True
-            actionResult["rc"] = 0
-            actionResult["portForwardStatus"] = True
-
+            data["eventData"]["remote"]["port"] = port
+            data["eventData"]["remote"]["portForwardStatus"] = True
+            return {"result" : True, "rc" : 0, "msg" : "Port forwarding started", "portForwardStatus" : True}
         else:
-            actionResult["result"] = False
-            actionResult["rc"] = 403
-            actionResult["msg"] = "No connection found"
-            return actionResult
-
+            return {"result" : False, "rc" : 403, "msg" : "No connection found"}
 
 class _remoteLinuxStopPortForward(action._action):
 
-    def run(self,data,persistentData,actionResult):
+    def doAction(self,data):
+        try:
+            client = data["eventData"]["remote"]["client"]
+            port = data["eventData"]["remote"]["port"]
+        except KeyError:
+            client = None
+            port = None
 
-        client = None
-        if "remote" in persistentData:
-            if "client" in persistentData["remote"]:
-                client = persistentData["remote"]["client"]
-            if "port" in persistentData["remote"]:
-                port = persistentData["remote"]["port"]
-        if client and port:
-            print("Stopping Connection")       
+        if client and port:    
             client.stop_port_forward(client)
-            actionResult["result"] = True
-            actionResult["rc"] = 0
-            persistentData["remote"]["portForwardStatus"] = False
-
+            data["eventData"]["remote"]["portForwardStatus"] = False
+            return {"result" : True, "rc" : 0, "msg" : "Port forwarding stopped"}
         else:
-            actionResult["result"] = False
-            actionResult["rc"] = 403
-            actionResult["msg"] = "No connection found"
-            return actionResult
-
+            return {"result" : False, "rc" : 403, "msg" : "No connection found"}
 
 class _remoteConnectWindows(action._action):
     host = str()
     user = str()
     password = str()
 
-    def run(self,data,persistentData,actionResult):
-        host = helpers.evalString(self.host,{"data" : data})
-        user = helpers.evalString(self.user,{"data" : data})
+    def doAction(self,data):
+        host = helpers.evalString(self.host,{"data" : data["flowData"]})
+        user = helpers.evalString(self.user,{"data" : data["flowData"]})
         password = auth.getPasswordFromENC(self.password)
 
         client = windows.windows(host,user,password)
         if client.client != None:
-            persistentData["remote"]={}
-            persistentData["remote"]["client"] = client
-            actionResult["result"] = True
-            actionResult["rc"] = 0
-            actionResult["msg"] = "Connection successful"
-            return actionResult
+            data["eventData"]["remote"]={"client" : client}
+            return {"result" : True, "rc" : 0, "msg" : "Connection successful"}
         else:
-            actionResult["result"] = False
-            actionResult["rc"] = 403
-            actionResult["msg"] = "Connection failed - {0}".format(client.error)
-            return actionResult
+            return {"result" : False, "rc" : 403, "msg" : "Connection failed - {0}".format(client.error)}
 
     def setAttribute(self,attr,value,sessionData=None):
         if attr == "password" and not value.startswith("ENC "):
@@ -149,11 +117,11 @@ class _remoteConnectFortigate(action._action):
     password = str()
     maxRecvTime = 5
 
-    def run(self,data,persistentData,actionResult):
-        host = helpers.evalString(self.host,{"data" : data})
-        port = helpers.evalString(self.port,{"data" : data})
-        deviceHostname = helpers.evalString(self.deviceHostname,{"data" : data})
-        user = helpers.evalString(self.user,{"data" : data})
+    def doAction(self,data):
+        host = helpers.evalString(self.host,{"data" : data["flowData"]})
+        port = helpers.evalString(self.port,{"data" : data["flowData"]})
+        deviceHostname = helpers.evalString(self.deviceHostname,{"data" : data["flowData"]})
+        user = helpers.evalString(self.user,{"data" : data["flowData"]})
         if self.password.startswith("ENC"):
             password = auth.getPasswordFromENC(self.password)
         else:
@@ -162,18 +130,10 @@ class _remoteConnectFortigate(action._action):
         client = fortigate.fortigate(host,deviceHostname,user,password=password,port=port,maxRecvTime=self.maxRecvTime)
 
         if client.client != None:
-            persistentData["remote"]={}
-            persistentData["remote"]["client"] = client
-
-            actionResult["result"] = True
-            actionResult["rc"] = 0
-            actionResult["msg"] = "Connection successful"
-            return actionResult
+            data["eventData"]["remote"]={"client" : client}
+            return {"result" : True, "rc" : 0, "msg" : "Connection successful"}
         else:
-            actionResult["result"] = False
-            actionResult["rc"] = 403
-            actionResult["msg"] = "Connection failed - {0}".format(client.error)
-            return actionResult
+            return {"result" : False, "rc" : 403, "msg" : "Connection failed - {0}".format(client.error)}
 
     def setAttribute(self,attr,value,sessionData=None):
         if attr == "password" and not value.startswith("ENC "):
@@ -182,17 +142,14 @@ class _remoteConnectFortigate(action._action):
         return super(_remoteConnectFortigate, self).setAttribute(attr,value,sessionData=sessionData)
 
 class _remoteDisconnect(action._action):
-    def run(self,data,persistentData,actionResult):
-        client = None
-        if "remote" in persistentData:
-            if "client" in persistentData["remote"]:
-                client = persistentData["remote"]["client"]
+    def doAction(self,data):
+        try:
+            client = data["eventData"]["remote"]["client"]
+        except KeyError:
+            client = None
         if client:
             client.disconnect()
-        actionResult["result"] = True
-        actionResult["msg"] = "Connection disconnected"
-        actionResult["rc"] = 0
-        return actionResult
+        return {"result" : True, "rc" : 0, "msg" : "Connection disconnected"}
 
 class _remoteCommand(action._action):
     command = str()
@@ -200,106 +157,73 @@ class _remoteCommand(action._action):
     runAs = str()
     timeout = 300
 
-    def run(self,data,persistentData,actionResult):
-        command = helpers.evalString(self.command,{"data" : data})
-        client = None
-        if "remote" in persistentData:
-            if "client" in persistentData["remote"]:
-                client = persistentData["remote"]["client"]
+    def doAction(self,data):
+        command = helpers.evalString(self.command,{"data" : data["flowData"]})
+        try:
+            client = data["eventData"]["remote"]["client"]
+        except KeyError:
+            client = None
         if client:
             exitCode, output, errors = client.command(command,elevate=self.elevate,runAs=self.runAs,timeout=self.timeout)
             
             if exitCode != None:
-                actionResult["result"] = True
-                actionResult["data"] = output
-                actionResult["errors"] = errors
-                actionResult["rc"] = exitCode
-                return actionResult
+                return {"result" : True, "rc" : exitCode, "msg" : "Command succesfull", "data" : output, "errors" : errors}
             else:
-                actionResult["result"] = False
-                actionResult["msg"] = client.error
-                actionResult["data"] = ""
-                actionResult["errors"] = ""
-                actionResult["rc"] = 255
-                return actionResult
+                return {"result" : False, "rc" : 255, "msg" : client.error, "data" : "", "errors" : ""}
         else:
-            actionResult["result"] = False
-            actionResult["rc"] = 403
-            actionResult["msg"] = "No connection found"
-            return actionResult
+            return {"result" : False, "rc" : 403, "msg" : "No connection found"}
 
 class _remoteReboot(action._action):
     timeout = int()
 
-    def run(self,data,persistentData,actionResult):
-        client = None
-        if "remote" in persistentData:
-            if "client" in persistentData["remote"]:
-                client = persistentData["remote"]["client"]
+    def doAction(self,data):
+        try:
+            client = data["eventData"]["remote"]["client"]
+        except KeyError:
+            client = None
         if client:
             timeout = 60
             if self.timeout > 0:
                 timeout = self.timeout
             result = client.reboot(timeout)
-            actionResult["result"] = result
             if result:
-                actionResult["rc"] = 0
-                actionResult["msg"] = "Reboot successful"
+                return {"result" : True, "rc" : 0, "msg" : "Reboot successful"}
             else:
-                actionResult["rc"] = 255
-                actionResult["msg"] = "Reboot failed"
-            return actionResult
+                return {"result" : False, "rc" : 255, "msg" : "Reboot failed"}
         else:
-            actionResult["result"] = False
-            actionResult["rc"] = 403
-            actionResult["msg"] = "No connection found"
-            return actionResult
+            return {"result" : False, "rc" : 403, "msg" : "No connection found"}
 
 class _remoteDownload(action._action):
     remoteFile = str()
     localFile = str()
     createMissingFolders = bool()
 
-    def run(self,data,persistentData,actionResult):
-        remoteFile = helpers.evalString(self.remoteFile,{"data" : data})
-        localFile = helpers.evalString(self.localFile,{"data" : data})
+    def doAction(self,data):
+        remoteFile = helpers.evalString(self.remoteFile,{"data" : data["flowData"]})
+        localFile = helpers.evalString(self.localFile,{"data" : data["flowData"]})
 
         client = None
-        if "remote" in persistentData:
-            if "client" in persistentData["remote"]:
-                client = persistentData["remote"]["client"]
+        if "remote" in data["eventData"]:
+            if "client" in data["eventData"]["remote"]:
+                client = data["eventData"]["remote"]["client"]
         if client:
             if client.download(remoteFile,localFile,self.createMissingFolders):
-                actionResult["result"] = True
-                actionResult["msg"] = "File transfered successful"
-                actionResult["rc"] = 0
-                return actionResult
+                return {"result" : True, "rc" : 0, "msg" : "File transfered successful"}
 
-        actionResult["result"] = False
-        actionResult["msg"] = "File transfer failed - {0}".format(client.error)
-        actionResult["rc"] = 403
-        return actionResult
+        return {"result" : False, "rc" : 403, "msg" : "File transfer failed - {0}".format(client.error)}
 
 class _remoteUpload(action._action):
     remoteFile = str()
     localFile = str()
 
-    def run(self,data,persistentData,actionResult):
-        remoteFile = helpers.evalString(self.remoteFile,{"data" : data})
-        localFile = helpers.evalString(self.localFile,{"data" : data})
-
-        client = None
-        if "remote" in persistentData:
-            if "client" in persistentData["remote"]:
-                client = persistentData["remote"]["client"]
+    def doAction(self,data):
+        remoteFile = helpers.evalString(self.remoteFile,{"data" : data["flowData"]})
+        localFile = helpers.evalString(self.localFile,{"data" : data["flowData"]})
+        try:
+            client = data["eventData"]["remote"]["client"]
+        except KeyError:
+            client = None
         if client:
             if client.upload(localFile,remoteFile):
-                actionResult["result"] = True
-                actionResult["msg"] = "File transfered successful"
-                actionResult["rc"] = 0
-                return actionResult
-                
-        actionResult["result"] = False
-        actionResult["msg"] = "File transfer failed - {0}".format(client.error)
-        actionResult["rc"] = 403
-        return actionResult
+                return {"result" : True, "rc" : 0, "msg" : "File transfered successful"}
+        return {"result" : False, "rc" : 403, "msg" : "File transfer failed - {0}".format(client.error)}
