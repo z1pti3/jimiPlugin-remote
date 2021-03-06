@@ -124,6 +124,7 @@ class linux():
                     else:
                         time.sleep(0.25)
                 response += stdout.readlines()
+                response = "".join(response)
                 errors = stderr.readlines()
                 exitCode = stdout.channel.recv_exit_status() # Cant be killed by system exit exception
                 return (exitCode, response, errors)
