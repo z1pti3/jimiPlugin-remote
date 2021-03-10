@@ -221,6 +221,7 @@ class _remoteDownload(action._action):
             if client.download(remoteFile,localFile,self.createMissingFolders):
                 if self.useStorage:
                     localFileClass.calculateHash()
+                    return {"result" : True, "rc" : 0, "msg" : "File transfered successful", "storage" : { "fileHash" : localFileClass.fileHash, "_id" : localFileClass._id } }
                 return {"result" : True, "rc" : 0, "msg" : "File transfered successful"}
 
         return {"result" : False, "rc" : 403, "msg" : "File transfer failed - {0}".format(client.error)}
