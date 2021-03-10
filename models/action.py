@@ -207,11 +207,11 @@ class _remoteDownload(action._action):
 
         if self.useStorage:
             try:
-                remoteFile = jimi.storage._storage().getAsClass(query={ "fileData" : remoteFile, "systemStorage" : True, "source" : "remoteDownload" })[0].getFullFilePath()
+                remoteFileClass = jimi.storage._storage().getAsClass(query={ "fileData" : remoteFile, "systemStorage" : True, "source" : "remoteDownload" })[0]
             except:
                 remoteFileClass = jimi.storage._storage()
                 remoteFileClass.new(self.acl,"remoteDownload",remoteFile)
-                remoteFile = remoteFileClass.getFullFilePath()
+             remoteFile = remoteFileClass.getFullFilePath()
 
         client = None
         if "remote" in data["eventData"]:
@@ -219,6 +219,8 @@ class _remoteDownload(action._action):
                 client = data["eventData"]["remote"]["client"]
         if client:
             if client.download(remoteFile,localFile,self.createMissingFolders):
+                if self.useStorage:
+                    remoteFileClass.calculateHash()
                 return {"result" : True, "rc" : 0, "msg" : "File transfered successful"}
 
         return {"result" : False, "rc" : 403, "msg" : "File transfer failed - {0}".format(client.error)}
