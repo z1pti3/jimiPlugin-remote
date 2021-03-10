@@ -2,6 +2,8 @@ from core import settings, helpers, auth
 from core.models import action
 from plugins.remote.includes import linux, windows, fortigate
 
+import jimi
+
 class _remoteConnectLinux(action._action):
     host = str()
     user = str()
@@ -197,10 +199,19 @@ class _remoteDownload(action._action):
     remoteFile = str()
     localFile = str()
     createMissingFolders = bool()
+    useStorage = bool()
 
     def doAction(self,data):
         remoteFile = helpers.evalString(self.remoteFile,{"data" : data["flowData"]})
         localFile = helpers.evalString(self.localFile,{"data" : data["flowData"]})
+
+        if self.useStorage:
+            try:
+                remoteFile = jimi.storage._storage().getAsClass(query={ "fileData" : remoteFile, "systemStorage" : True, "source" : "remoteDownload" })[0].getFullFilePath()
+            except:
+                remoteFileClass = jimi.storage._storage()
+                remoteFileClass.new(self.acl,"remoteDownload",remoteFile)
+                remoteFile = remoteFileClass.getFullFilePath()
 
         client = None
         if "remote" in data["eventData"]:
@@ -215,10 +226,18 @@ class _remoteDownload(action._action):
 class _remoteUpload(action._action):
     remoteFile = str()
     localFile = str()
+    useStorage = bool()
 
     def doAction(self,data):
         remoteFile = helpers.evalString(self.remoteFile,{"data" : data["flowData"]})
         localFile = helpers.evalString(self.localFile,{"data" : data["flowData"]})
+
+        if self.useStorage:
+            try:
+                localFile = jimi.storage._storage().getAsClass(id=localFile)[0].getLocalFilePath()
+            except:
+                return {"result" : False, "rc" : 404, "msg" : "Local file not found within storage store. storageID={0}".format(localFile)}
+
         try:
             client = data["eventData"]["remote"]["client"]
         except KeyError:
