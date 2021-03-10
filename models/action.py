@@ -236,7 +236,10 @@ class _remoteUpload(action._action):
 
         if self.useStorage:
             try:
-                localFile = jimi.storage._storage().getAsClass(id=localFile)[0].getLocalFilePath()
+                localFilePath = jimi.storage._storage().getAsClass(id=localFile)[0].getLocalFilePath()
+                if not localFilePath:
+                    raise
+                localFile = localFilePath
             except:
                 return {"result" : False, "rc" : 404, "msg" : "Local file not found within storage store. storageID={0}".format(localFile)}
 
