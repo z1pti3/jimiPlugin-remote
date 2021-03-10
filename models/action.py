@@ -211,7 +211,7 @@ class _remoteDownload(action._action):
             except:
                 remoteFileClass = jimi.storage._storage()
                 remoteFileClass.new(self.acl,"remoteDownload",remoteFile)
-             remoteFile = remoteFileClass.getFullFilePath()
+            remoteFile = remoteFileClass.getFullFilePath()
 
         client = None
         if "remote" in data["eventData"]:
