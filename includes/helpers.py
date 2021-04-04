@@ -21,9 +21,7 @@ def runRemoteFunction(runRemote,persistentData,functionCall,functionInputDict,el
                     exitCode, stdout, stderr = client.command(cmd,elevate=elevate)
                 else:
                     exitCode, stdout, stderr = client.command(cmd,elevate=elevate)
-                stdout = "\n".join(stdout)
-                stderr = "\n".join(stderr)
                 if exitCode == 0:
-                    return ast.literal_eval(stdout.split("\n")[-2])
+                    return ast.literal_eval(stdout)
                 return { "error" : "Remote function failed", "stdout" : stdout, "stderr" : stderr, "exitCode" : exitCode }
     return functionCall(functionInputDict)
