@@ -52,7 +52,7 @@ class fortigate():
             time.sleep(0.1)
         return recvBuffer
 
-    def command(self, command, args=[], elevate=False, runAs=None):
+    def command(self, command, args=[], elevate=False, runAs=None, timeout=None):
         self.channel.send("{0}{1}".format(command,"\n"))
         return (0, self.recv(), "")
 
