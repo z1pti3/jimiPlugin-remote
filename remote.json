@@ -1,7 +1,7 @@
 {
    "name": "remote",
    "author": "z1p, b1scuit-thi3f, TerrifiedBug, TheCypherGoat",
-   "version": 1.3,
+   "version": 1.4,
    "categories": ["remote","automation"],
    "description": "jimi IT automation framework to carry out remote tasks on workstations, servers, etc",
    "icon": null,
@@ -142,55 +142,6 @@
                "schema_value": "timeout",
                "type": "input",
                "label": "timeout",
-               "description": ""
-            },
-            {
-               "schema_item": "host",
-               "schema_value": "host",
-               "type": "input",
-               "label": "host",
-               "description": ""
-            },
-            {
-               "schema_item": "user",
-               "schema_value": "user",
-               "type": "input",
-               "label": "user",
-               "description": ""
-            },
-            {
-               "schema_item": "port",
-               "schema_value": "port",
-               "type": "input",
-               "label": "port",
-               "description": ""
-            },
-            {
-               "schema_item": "password",
-               "schema_value": "password",
-               "type": "input",
-               "label": "password",
-               "description": ""
-            },
-            {
-               "schema_item": "password",
-               "schema_value": "password",
-               "type": "input",
-               "label": "password",
-               "description": ""
-            },
-            {
-               "schema_item": "password",
-               "schema_value": "password",
-               "type": "input",
-               "label": "password",
-               "description": ""
-            },
-            {
-               "schema_item": "keyfile",
-               "schema_value": "keyfile",
-               "type": "input",
-               "label": "keyfile",
                "description": ""
             }
          ],
