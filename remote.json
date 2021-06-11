@@ -3,7 +3,7 @@
    "author": "z1p, b1scuit-thi3f, TerrifiedBug, TheCypherGoat",
    "version": 1.3,
    "categories": ["remote","automation"],
-   "description": "",
+   "description": "jimi IT automation framework to carry out remote tasks on workstations, servers, etc",
    "icon": null,
    "requirements": {
       "jimi_min_version": null,
