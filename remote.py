@@ -1,7 +1,7 @@
 from core import plugin, model
 
 class _remote(plugin._plugin):
-    version = 1.2
+    version = 1.3
 
     def install(self):
         # Register models
@@ -16,6 +16,7 @@ class _remote(plugin._plugin):
         model.registerModel("linuxStopPortForward","_remoteLinuxStopPortForward","_action","plugins.remote.models.action")   
         model.registerModel("remotePullWinEvents","_remotePullWinEvents","_trigger","plugins.remote.models.trigger")      
         model.registerModel("remoteConnectFortigate","_remoteConnectFortigate","_action","plugins.remote.models.action")
+        model.registerModel("remoteMultiCommand","_remoteMultiCommand","_action","plugins.remote.models.action")
         return True
         
 
@@ -29,7 +30,8 @@ class _remote(plugin._plugin):
         model.deregisterModel("remoteDisconnect","_remoteDisconnect","_action","plugins.remote.models.action")
         model.deregisterModel("remoteReboot","_remoteReboot","_action","plugins.remote.models.action")
         model.deregisterModel("remotePullWinEvents","_remotePullWinEvents","_trigger","plugins.remote.models.trigger") 
-        model.deregisterModel("remoteConnectFortigate","_remoteConnectFortigate","_action","plugins.remote.models.action")    
+        model.deregisterModel("remoteConnectFortigate","_remoteConnectFortigate","_action","plugins.remote.models.action")  
+        model.deregisterModel("remoteMultiCommand","_remoteMultiCommand","_action","plugins.remote.models.action") 
         return True
 
     def upgrade(self,LatestPluginVersion):
@@ -47,6 +49,8 @@ class _remote(plugin._plugin):
             model.registerModel("remoteConnectWindows","_remoteConnectWindows","_action","plugins.remote.models.action")
         if self.version < 1.2:
             model.registerModel("remoteConnectFortigate","_remoteConnectFortigate","_action","plugins.remote.models.action")
+        if self.version < 1.3:
+            model.registerModel("remoteMultiCommand","_remoteMultiCommand","_action","plugins.remote.models.action")
 
         return True
 

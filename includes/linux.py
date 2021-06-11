@@ -8,35 +8,36 @@ import time
 class linux():
     # client = None
 
-    def __init__(self, host, username="root", keyFile='', password='',port_forward=False,port=""):
+    def __init__(self, host, username="root", keyFile='', password='',port_forward=False,port="",timeout=10):
         self.error          = ""
         self.host           = host
         self.keyFile        = keyFile
         self.username       = username
         self.password       = password
         self.port_forward   = port_forward
+        self.type = "linux"
         
         if port:
             self.port           = int(port)     
 
         if not self.port_forward:
             if self.keyFile != '':
-                self.client = self.connect(self.host,self.username,keyFile=self.keyFile,password=self.password)
+                self.client = self.connect(self.host,self.username,keyFile=self.keyFile,password=self.password,timeout=timeout)
             else:
-                self.client = self.connect(self.host,self.username,password=self.password)            
+                self.client = self.connect(self.host,self.username,password=self.password,timeout=timeout)          
         else:
             if keyFile != '':
-                self.client,self.sshTunnel = self.connect(self.host,self.username,keyFile=self.keyFile,password=self.password,port_forward=self.port_forward,port=self.port)
+                self.client,self.sshTunnel = self.connect(self.host,self.username,keyFile=self.keyFile,password=self.password,port_forward=self.port_forward,port=self.port,timeout=timeout)
                 
                 self.tunnelPort = self.sshTunnel.local_bind_port
                 # print(f"Binded init port is {self.tunnelPort}")
             else:
-                self.client,self.sshTunnel = self.connect(self.host,self.username,keyFile=self.keyFile,port_forward=self.port_forward,port=self.port)
+                self.client,self.sshTunnel = self.connect(self.host,self.username,keyFile=self.keyFile,port_forward=self.port_forward,port=self.port,timeout=timeout)
         
         if self.client:
             self.scp    = self.connectSCP(self.client)
 
-    def connect(self,host,username,keyFile="",password='',port_forward=False,port=""):
+    def connect(self,host,username,keyFile="",password='',port_forward=False,port="",timeout=10):
         try: 
             client = SSHClient()
             client.load_system_host_keys()
@@ -45,9 +46,9 @@ class linux():
                 if self.keyFile != '':
                     try:  
                         if password != "":
-                            client.connect(host, username=username, key_filename=keyFile,passphrase=password, look_for_keys=True, timeout=5000)
+                            client.connect(host, username=username, key_filename=keyFile,passphrase=password, look_for_keys=True, timeout=timeout)
                         else:
-                            client.connect(host, username=username, key_filename=keyFile, look_for_keys=True, timeout=5000)
+                            client.connect(host, username=username, key_filename=keyFile, look_for_keys=True, timeout=timeout)
                         
                         sshTunnel = SSHTunnelForwarder(
                         (host, 22),
@@ -87,8 +88,6 @@ class linux():
         except Exception as e:
             self.error = e
             return None
-
-
 
     def connectSCP(self, client):
         scp = SCPClient(client.get_transport())

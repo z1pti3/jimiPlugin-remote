@@ -11,6 +11,7 @@ class _remoteConnectLinux(action._action):
     password = str()
     isPortForward = bool()
     port_forward = str()
+    timeout = 10
     
     def doAction(self,data):
         host = helpers.evalString(self.host,{"data" : data["flowData"]})
@@ -27,19 +28,19 @@ class _remoteConnectLinux(action._action):
         if self.isPortForward:
             if keyfile != "":
                 if password:
-                    client= linux.linux(host,user,keyFile=keyfile,password=password,port_forward=True,port=port)
+                    client= linux.linux(host,user,keyFile=keyfile,password=password,port_forward=True,port=port,timeout=self.timeout)
                 else:
-                    client = linux.linux(host,user,keyFile=keyfile,port_forward=True,port=port)
+                    client = linux.linux(host,user,keyFile=keyfile,port_forward=True,port=port,timeout=self.timeout)
             else:
-                client = linux.linux(host,user,password=password)
+                client = linux.linux(host,user,password=password,timeout=self.timeout)
         else:
             if keyfile != "":
                 if password != "":
-                    client = linux.linux(host,user,keyFile=keyfile,password=password)
+                    client = linux.linux(host,user,keyFile=keyfile,password=password,timeout=self.timeout)
                 else:
-                    client = linux.linux(host,user,keyFile=keyfile)
+                    client = linux.linux(host,user,keyFile=keyfile,timeout=self.timeout)
             else:
-                client = linux.linux(host,user,password=password)
+                client = linux.linux(host,user,password=password,timeout=self.timeout)
 
         if client.client != None:
             data["eventData"]["remote"]={}
@@ -179,6 +180,40 @@ class _remoteCommand(action._action):
                 return {"result" : True, "rc" : exitCode, "msg" : "Command succesfull", "data" : output, "errors" : errors}
             else:
                 return {"result" : False, "rc" : 255, "msg" : client.error, "data" : "", "errors" : ""}
+        else:
+            return {"result" : False, "rc" : 403, "msg" : "No connection found"}
+
+class _remoteMultiCommand(action._action):
+    commands = str()
+    elevate = bool()
+    runAs = str()
+    timeout = 300
+    exitOnFailure = True
+
+    def doAction(self,data):
+        commandResults = []
+        commands = helpers.evalString(self.commands,{"data" : data["flowData"]})
+        try:
+            client = data["eventData"]["remote"]["client"]
+        except KeyError:
+            client = None
+        if client:
+            if "\n" in commands:
+                commands = commands.split("\n")
+            else:
+                commands = [commands]
+            for command in commands:
+                exitCode, output, errors = client.command(command,elevate=self.elevate,runAs=self.runAs,timeout=self.timeout)
+                if exitCode != None:
+                    commandResults.append({"result" : True, "rc" : exitCode, "msg" : "Command succesfull", "data" : output, "command":command, "errors" : errors})
+                else:
+                    if self.exitOnFailure:
+                        return {"result" : False, "rc" : 255, "msg" : client.error, "commands" : commandResults, "errors" : ""}
+                    else:
+                        commandResults.append({"result" : False, "rc" : 255, "msg" : client.error, "data" : output, "errors" : "", "command":command})
+
+            return {"result" : True, "rc" : 0, "msg" : "All commands ran", "commands" : commandResults, "errors" : ""}
+            
         else:
             return {"result" : False, "rc" : 403, "msg" : "No connection found"}
 

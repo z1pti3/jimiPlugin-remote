@@ -13,6 +13,7 @@ class fortigate():
             self.port = int(port)   
         self.maxRecvTime = maxRecvTime
         self.error = ""  
+        self.type = "fortigate"
 
         self.client = self.connect(self.host, self.username, password=self.password)  
 

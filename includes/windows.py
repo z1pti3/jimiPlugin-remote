@@ -15,6 +15,7 @@ class windows():
         self.username = username
         self.password = password
         self.error = ""
+        self.type = "windows"
         self.client = self.connect(host,username,password)
 
     def __del__(self):
