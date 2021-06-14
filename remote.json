@@ -370,20 +370,6 @@
          "class_location": "models.action",
          "description": "",
          "fields": [
-            {
-               "schema_item": "client",
-               "schema_value": "client",
-               "type": "input",
-               "label": "client",
-               "description": ""
-            },
-            {
-               "schema_item": "client",
-               "schema_value": "client",
-               "type": "input",
-               "label": "client",
-               "description": ""
-            }
          ],
          "data_out": {
             "result": {
@@ -510,7 +496,7 @@
                "schema_item": "exitOnFailure",
                "schema_value": "exitOnFailure",
                "type": "input",
-               "label": "exitOnFailure",
+               "label": "exit on failure",
                "description": ""
             }
          ],
