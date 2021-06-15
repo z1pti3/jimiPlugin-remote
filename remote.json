@@ -495,7 +495,7 @@
             {
                "schema_item": "exitOnFailure",
                "schema_value": "exitOnFailure",
-               "type": "input",
+               "type": "checkbox",
                "label": "exit on failure",
                "description": ""
             }
