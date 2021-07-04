@@ -19,8 +19,7 @@ class windows():
         self.client = self.connect(host,username,password)
 
     def __del__(self):
-        pass
-        #self.disconnect()
+        self.disconnect()
         
     def connect(self,host,username,password):
         client = Protocol(endpoint="http://{0}:5985/wsman".format(host),transport="ntlm",username=username,password=password,read_timeout_sec=30)
@@ -34,7 +33,7 @@ class windows():
     def disconnect(self):
         if self.client:
             self.client = None
-            smbclient.delete_session(self.host)
+            #smbclient.delete_session(self.host)
 
     def reboot(self,timeout):
         startTime = time.time()
