@@ -1,7 +1,7 @@
 {
    "name": "remote",
    "author": "z1p, b1scuit-thi3f, TerrifiedBug, TheCypherGoat",
-   "version": 1.41,
+   "version": 1.42,
    "categories": ["remote","automation"],
    "description": "jimi IT automation framework to carry out remote tasks on workstations, servers, etc",
    "icon": null,
@@ -328,6 +328,88 @@
                "schema_value": "password",
                "type": "input",
                "label": "password",
+               "description": ""
+            },
+            {
+               "schema_item": "maxRecvTime",
+               "schema_value": "maxRecvTime",
+               "type": "input",
+               "label": "maxRecvTime",
+               "description": ""
+            }
+         ],
+         "data_out": {
+            "result": {
+               "description": "Returns True when successful.",
+               "type": "boolean",
+               "always_present": true,
+               "values": {
+                  "True": {
+                     "description": "Successful."
+                  },
+                  "False": {
+                     "description": "Failure."
+                  }
+               }
+            },
+            "rc": {
+               "description": "Returns the exit code for the action.",
+               "type": "number",
+               "always_present": true,
+               "values": {
+                  "0": {
+                     "description": "Successful."
+                  }
+               }
+            }
+         }
+      },
+      "remoteConnectCisco": {
+         "display_name": "remoteConnectCisco",
+         "className": "_remoteConnectCisco",
+         "class_location": "models.action",
+         "description": "",
+         "fields": [
+            {
+               "schema_item": "host",
+               "schema_value": "host",
+               "type": "input",
+               "label": "host",
+               "description": ""
+            },
+            {
+               "schema_item": "port",
+               "schema_value": "port",
+               "type": "input",
+               "label": "port",
+               "description": ""
+            },
+            {
+               "schema_item": "deviceHostname",
+               "schema_value": "deviceHostname",
+               "type": "input",
+               "label": "deviceHostname",
+               "description": ""
+            },
+            {
+               "schema_item": "ssh_username",
+               "schema_value": "ssh_username",
+               "type": "input",
+               "label": "ssh_username",
+               "description": ""
+            },
+            {
+               "schema_item": "ssh_password",
+               "schema_value": "ssh_password",
+               "type": "input",
+               "label": "ssh_password",
+               "description": ""
+            },
+            {
+               "schema_item": "enable_password",
+               "schema_value": "enable_password",
+               "type": "input",
+               "label": "enable_password",
                "description": ""
             },
             {

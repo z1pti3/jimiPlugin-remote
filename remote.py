@@ -1,7 +1,7 @@
 from core import plugin, model
 
 class _remote(plugin._plugin):
-    version = 1.41
+    version = 1.42
 
     def install(self):
         # Register models
@@ -17,6 +17,7 @@ class _remote(plugin._plugin):
         model.registerModel("remotePullWinEvents","_remotePullWinEvents","_trigger","plugins.remote.models.trigger")      
         model.registerModel("remoteConnectFortigate","_remoteConnectFortigate","_action","plugins.remote.models.action")
         model.registerModel("remoteMultiCommand","_remoteMultiCommand","_action","plugins.remote.models.action")
+        model.registerModel("remoteConnectCisco","_remoteConnectCisco","_action","plugins.remote.models.action")
         return True
         
 
@@ -31,7 +32,8 @@ class _remote(plugin._plugin):
         model.deregisterModel("remoteReboot","_remoteReboot","_action","plugins.remote.models.action")
         model.deregisterModel("remotePullWinEvents","_remotePullWinEvents","_trigger","plugins.remote.models.trigger") 
         model.deregisterModel("remoteConnectFortigate","_remoteConnectFortigate","_action","plugins.remote.models.action")  
-        model.deregisterModel("remoteMultiCommand","_remoteMultiCommand","_action","plugins.remote.models.action") 
+        model.deregisterModel("remoteMultiCommand","_remoteMultiCommand","_action","plugins.remote.models.action")
+        model.deregisterModel("remoteConnectCisco","_remoteConnectCisco","_action","plugins.remote.models.action") 
         return True
 
     def upgrade(self,LatestPluginVersion):
@@ -51,7 +53,8 @@ class _remote(plugin._plugin):
             model.registerModel("remoteConnectFortigate","_remoteConnectFortigate","_action","plugins.remote.models.action")
         if self.version < 1.3:
             model.registerModel("remoteMultiCommand","_remoteMultiCommand","_action","plugins.remote.models.action")
-
+        if self.version < 1.42:
+            model.registerModel("remoteConnectCisco","_remoteConnectCisco","_action","plugins.remote.models.action")
         return True
 
 

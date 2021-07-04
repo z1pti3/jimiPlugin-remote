@@ -1,6 +1,6 @@
 from core import settings, helpers, auth
 from core.models import action
-from plugins.remote.includes import linux, windows, fortigate
+from plugins.remote.includes import linux, windows, fortigate, cisco
 import re
 import jimi
 
@@ -150,6 +150,50 @@ class _remoteConnectFortigate(action._action):
             self.password = "ENC {0}".format(auth.getENCFromPassword(value))
             return True
         return super(_remoteConnectFortigate, self).setAttribute(attr,value,sessionData=sessionData)
+
+class _remoteConnectCisco(action._action):
+    host = str()
+    port = str()
+    deviceHostname = str()
+    ssh_username = str()
+    ssh_password = str()
+    enable_password = str()
+    maxRecvTime = 5
+
+    def doAction(self,data):
+        host = helpers.evalString(self.host,{"data" : data["flowData"]})
+        port = helpers.evalString(self.port,{"data" : data["flowData"]})
+        deviceHostname = helpers.evalString(self.deviceHostname,{"data" : data["flowData"]})
+        ssh_username = helpers.evalString(self.ssh_username,{"data" : data["flowData"]})
+        if self.ssh_password.startswith("ENC"):
+            ssh_password = auth.getPasswordFromENC(self.ssh_password)
+        elif "%%" in self.ssh_password:
+            ssh_password = helpers.evalString(self.ssh_password,{"data" : data["flowData"]})
+        else:
+            ssh_password = ""
+        if self.enable_password.startswith("ENC"):
+            enable_password = auth.getPasswordFromENC(self.enable_password)
+        elif "%%" in self.enable_password:
+            enable_password = helpers.evalString(self.enable_password,{"data" : data["flowData"]})
+        else:
+            enable_password = ""
+
+        client = cisco.cisco(host,deviceHostname,ssh_username,ssh_password,enable_password,port,self.maxRecvTime)
+
+        if client.client != None:
+            data["eventData"]["remote"]={"client" : client}
+            return {"result" : True, "rc" : 0, "msg" : "Connection successful"}
+        else:
+            return {"result" : False, "rc" : 403, "msg" : "Connection failed - {0}".format(client.error)}
+
+    def setAttribute(self,attr,value,sessionData=None):
+        if attr == "ssh_password" and not value.startswith("ENC ") and not re.match(".*%%.*%%",value):
+            self.ssh_password = "ENC {0}".format(auth.getENCFromPassword(value))
+            return True
+        if attr == "enable_password" and not value.startswith("ENC ") and not re.match(".*%%.*%%",value):
+            self.enable_password = "ENC {0}".format(auth.getENCFromPassword(value))
+            return True
+        return super(_remoteConnectCisco, self).setAttribute(attr,value,sessionData=sessionData)
 
 class _remoteDisconnect(action._action):
     def doAction(self,data):
