@@ -208,18 +208,20 @@ class _remoteDisconnect(action._action):
 
 class _remoteCommand(action._action):
     command = str()
+    arguments = list()
     elevate = bool()
     runAs = str()
     timeout = 300
 
     def doAction(self,data):
         command = helpers.evalString(self.command,{"data" : data["flowData"]})
+        arguments = helpers.evalList(self.arguments,{"data" : data["flowData"]})
         try:
             client = data["eventData"]["remote"]["client"]
         except KeyError:
             client = None
         if client:
-            exitCode, output, errors = client.command(command,elevate=self.elevate,runAs=self.runAs,timeout=self.timeout)
+            exitCode, output, errors = client.command(command,args=arguments,elevate=self.elevate,runAs=self.runAs,timeout=self.timeout)
             
             if exitCode != None:
                 return {"result" : True, "rc" : exitCode, "msg" : "Command succesfull", "data" : output, "errors" : errors}

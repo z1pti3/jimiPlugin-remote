@@ -7,6 +7,55 @@ from pathlib import Path
 import os
 import time
 import errno
+from pypsexec.client import Client
+
+class windowsPSExec():
+
+    def __init__(self, host, username="administrator", password="", encrypt=True):
+        self.host = host
+        self.username = username
+        self.password = password
+        self.error = ""
+        self.type = "windowsPSExec"
+        self.client = self.connect(host,username,password,encrypt)
+
+    def __del__(self):
+        self.disconnect()
+        
+    def connect(self,host,username,password,encrypt):
+        client = Client(host, username=username, password=password, encrypt=encrypt)
+        client.connect()
+        client.create_service()
+        return client
+
+    def disconnect(self):
+        if self.client:
+            self.client.remove_service()
+            self.client.disconnect()
+            self.client = None
+
+    def command(self, command, args=[], elevate=False, runAs=None, timeout=30):
+        if self.client:
+            if runAs == "SYSTEM":
+                response, errors, exitCode = self.client.run_executable(command, arguments=" ".join(args), use_system_account=True, timeout_seconds=timeout)
+            else:
+                response, errors, exitCode = self.client.run_executable(command, arguments=" ".join(args), timeout_seconds=timeout)
+            return (exitCode, response, errors)
+
+    def reboot(self,timeout):
+        # Not implimented yet!
+        self.error = "Not implimented"
+        pass
+
+    def upload(self, localFile, remotePath):
+        # Not supported!
+        self.error = "Not supported"
+        return False
+
+    def download(self, remoteFile, localPath, createMissingFolders):
+        # Not supported!
+        self.error = "Not supported"
+        return False
 
 class windows():
 
