@@ -118,6 +118,33 @@ class _remoteConnectWindows(action._action):
             return True
         return super(_remoteConnectWindows, self).setAttribute(attr,value,sessionData=sessionData)
 
+class _remoteConnectWindowsPSExec(action._action):
+    host = str()
+    user = str()
+    password = str()
+    use_encryption = True
+
+    def doAction(self,data):
+        host = helpers.evalString(self.host,{"data" : data["flowData"]})
+        user = helpers.evalString(self.user,{"data" : data["flowData"]})
+        if self.password.startswith("ENC"):
+            password = auth.getPasswordFromENC(self.password)
+        elif "%%" in self.password:
+            password = helpers.evalString(self.password,{"data" : data["flowData"]})
+
+        client = windows.windowsPSExec(host,user,password,self.use_encryption)
+        if client.client != None:
+            data["eventData"]["remote"]={"client" : client}
+            return {"result" : True, "rc" : 0, "msg" : "Connection successful"}
+        else:
+            return {"result" : False, "rc" : 403, "msg" : "Connection failed - {0}".format(client.error)}
+
+    def setAttribute(self,attr,value,sessionData=None):
+        if attr == "password" and not value.startswith("ENC ") and not re.match(".*%%.*%%",value):
+            self.password = "ENC {0}".format(auth.getENCFromPassword(value))
+            return True
+        return super(_remoteConnectWindowsPSExec, self).setAttribute(attr,value,sessionData=sessionData)
+
 class _remoteConnectFortigate(action._action):
     host = str()
     port = str()

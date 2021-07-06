@@ -18,6 +18,7 @@ class _remote(plugin._plugin):
         model.registerModel("remoteConnectFortigate","_remoteConnectFortigate","_action","plugins.remote.models.action")
         model.registerModel("remoteMultiCommand","_remoteMultiCommand","_action","plugins.remote.models.action")
         model.registerModel("remoteConnectCisco","_remoteConnectCisco","_action","plugins.remote.models.action")
+        model.registerModel("remoteConnectWindowsPSExec","_remoteConnectWindowsPSExec","_action","plugins.remote.models.action")
         return True
         
 
@@ -34,6 +35,7 @@ class _remote(plugin._plugin):
         model.deregisterModel("remoteConnectFortigate","_remoteConnectFortigate","_action","plugins.remote.models.action")  
         model.deregisterModel("remoteMultiCommand","_remoteMultiCommand","_action","plugins.remote.models.action")
         model.deregisterModel("remoteConnectCisco","_remoteConnectCisco","_action","plugins.remote.models.action") 
+        model.deregisterModel("remoteConnectWindowsPSExec","_remoteConnectWindowsPSExec","_action","plugins.remote.models.action")
         return True
 
     def upgrade(self,LatestPluginVersion):
@@ -55,6 +57,8 @@ class _remote(plugin._plugin):
             model.registerModel("remoteMultiCommand","_remoteMultiCommand","_action","plugins.remote.models.action")
         if self.version < 1.42:
             model.registerModel("remoteConnectCisco","_remoteConnectCisco","_action","plugins.remote.models.action")
+        if self.version < 1.43:
+            model.registerModel("remoteConnectWindowsPSExec","_remoteConnectWindowsPSExec","_action","plugins.remote.models.action")
         return True
 
 
