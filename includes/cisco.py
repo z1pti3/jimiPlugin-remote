@@ -85,7 +85,8 @@ class cisco():
     def command(self, command, args=[], elevate=False, runAs=None, timeout=None):
         if command == "enable":
             return (0, self.enable(self.enablePassword), "")
-        
+        if args:
+            command = command + " ".join(args)
         self.channel.send("{0}{1}".format(command,"\n"))
         return (0, self.recv(), "")
 

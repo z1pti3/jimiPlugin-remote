@@ -117,6 +117,7 @@ class windows():
             if runAs:
                 if runAs == "user":
                     if args:
+                        command = command + " ".join(args)
                         command = "{0}\nrm c:\\windows\\temp\\jimiRunAsUser.ps1".format(powershellRunAsLoggedInUser.replace("<CMD>",command))
                     else:
                         command = "{0}\nrm c:\\windows\\temp\\jimiRunAsUser.ps1".format(powershellRunAsLoggedInUser.replace("<CMD>",command))
