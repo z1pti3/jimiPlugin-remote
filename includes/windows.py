@@ -10,24 +10,25 @@ import errno
 
 class windows():
 
-    def __init__(self, host, username="administrator", password=""):
+    def __init__(self, host, username="administrator", password="", smb=True):
         self.host = host
         self.username = username
         self.password = password
         self.error = ""
         self.type = "windows"
-        self.client = self.connect(host,username,password)
+        self.client = self.connect(host,username,password,smb)
 
     def __del__(self):
         self.disconnect()
         
-    def connect(self,host,username,password):
+    def connect(self,host,username,password,smb):
         client = Protocol(endpoint="http://{0}:5985/wsman".format(host),transport="ntlm",username=username,password=password,read_timeout_sec=30)
-        try:
-            smbclient.register_session(self.host, username=self.username, password=self.password, connection_timeout=30)
-        except Exception as e:
-            self.error = str(e)
-            return None
+        if smb:
+            try:
+                smbclient.register_session(self.host, username=self.username, password=self.password, connection_timeout=30)
+            except Exception as e:
+                self.error = str(e)
+                return None
         return client
 
     def disconnect(self):

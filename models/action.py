@@ -95,6 +95,7 @@ class _remoteConnectWindows(action._action):
     host = str()
     user = str()
     password = str()
+    enable_smb = True
 
     def doAction(self,data):
         host = helpers.evalString(self.host,{"data" : data["flowData"]})
@@ -104,7 +105,7 @@ class _remoteConnectWindows(action._action):
         elif "%%" in self.password:
             password = helpers.evalString(self.password,{"data" : data["flowData"]})
 
-        client = windows.windows(host,user,password)
+        client = windows.windows(host,user,password,smb=self.enable_smb)
         if client.client != None:
             data["eventData"]["remote"]={"client" : client}
             return {"result" : True, "rc" : 0, "msg" : "Connection successful"}
