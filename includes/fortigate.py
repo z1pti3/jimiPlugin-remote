@@ -2,7 +2,9 @@ from paramiko import SSHClient, AutoAddPolicy
 import time
 import re
 
-class fortigate():
+from plugins.remote.includes import remote
+
+class fortigate(remote.remote()):
 
     def __init__(self, host, deviceHostname, username="admin", password='', port=22, maxRecvTime=5):
         self.host = host
@@ -55,21 +57,6 @@ class fortigate():
             command = command + " ".join(args)
         self.channel.send("{0}{1}".format(command,"\n"))
         return (0, self.recv(), "")
-
-    def reboot(self,timeout):
-        # Not implimented yet!
-        self.error = "Not implimented"
-        pass
-
-    def upload(self, localFile, remotePath):
-        # Not supported!
-        self.error = "Not supported"
-        return False
-
-    def download(self, remoteFile, localPath, createMissingFolders):
-        # Not supported!
-        self.error = "Not supported"
-        return False
 
     def __del__(self):
         self.disconnect()

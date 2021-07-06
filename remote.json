@@ -124,6 +124,13 @@
                "description": ""
             },
             {
+               "schema_item": "port",
+               "schema_value": "port",
+               "type": "input",
+               "label": "port",
+               "description": ""
+            },
+            {
                "schema_item": "isPortForward",
                "schema_value": "isPortForward",
                "type": "checkbox",
@@ -131,10 +138,10 @@
                "description": ""
             },
             {
-               "schema_item": "port_forward",
-               "schema_value": "port_forward",
+               "schema_item": "remote_port",
+               "schema_value": "remote_port",
                "type": "input",
-               "label": "port_forward",
+               "label": "remote_port",
                "description": ""
             },
             {
@@ -142,6 +149,13 @@
                "schema_value": "timeout",
                "type": "input",
                "label": "timeout",
+               "description": ""
+            },
+            {
+               "schema_item": "enable_scp",
+               "schema_value": "enable_scp",
+               "type": "checkbox",
+               "label": "enable_scp",
                "description": ""
             }
          ],

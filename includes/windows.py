@@ -9,7 +9,9 @@ import time
 import errno
 from pypsexec.client import Client
 
-class windowsPSExec():
+from plugins.remote.includes import remote
+
+class windowsPSExec(remote.remote()):
 
     def __init__(self, host, username="administrator", password="", encrypt=True):
         self.host = host
@@ -42,22 +44,7 @@ class windowsPSExec():
                 response, errors, exitCode = self.client.run_executable(command, arguments=" ".join(args), timeout_seconds=timeout)
             return (exitCode, response, errors)
 
-    def reboot(self,timeout):
-        # Not implimented yet!
-        self.error = "Not implimented"
-        pass
-
-    def upload(self, localFile, remotePath):
-        # Not supported!
-        self.error = "Not supported"
-        return False
-
-    def download(self, remoteFile, localPath, createMissingFolders):
-        # Not supported!
-        self.error = "Not supported"
-        return False
-
-class windows():
+class windows(remote.remote()):
 
     def __init__(self, host, username="administrator", password="", smb=True):
         self.host = host
