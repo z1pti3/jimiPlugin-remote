@@ -277,6 +277,9 @@ class _remoteMultiCommand(action._action):
             else:
                 commands = [commands]
             for command in commands:
+                if " " in command:
+                    args = command.split(" ")[1:]
+                    command = command.split(" ")[0]
                 exitCode, output, errors = client.command(command,elevate=self.elevate,runAs=self.runAs,timeout=self.timeout)
                 if exitCode != None:
                     commandResults.append({"result" : True, "rc" : exitCode, "msg" : "Command succesfull", "data" : output, "command":command, "errors" : errors})
