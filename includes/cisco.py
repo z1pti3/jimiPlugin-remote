@@ -54,7 +54,7 @@ class cisco():
                 if recvBuffer.split('\n')[-1] == "--More--":
                     self.channel.send(" ")
                     recvBuffer = recvBuffer[:-8]
-                elif recvBuffer.split('\n')[-1].endswith(awaitString):
+                elif recvBuffer.split('\n')[-1].lower().endswith(awaitString.lower()):
                     result = True
                     break
             time.sleep(0.1)
