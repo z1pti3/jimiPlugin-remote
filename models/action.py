@@ -17,7 +17,7 @@ class _remoteConnectLinux(action._action):
         host = helpers.evalString(self.host,{"data" : data["flowData"]})
         user = helpers.evalString(self.user,{"data" : data["flowData"]})
         port = helpers.evalString(self.port_forward,{"data" : data["flowData"]})
-        if self.password.startswith("ENC"):
+        if self.password.startswith("ENC") and self.password != "":
             password = auth.getPasswordFromENC(self.password)
         elif "%%" in self.password:
             password = helpers.evalString(self.password,{"data" : data["flowData"]})
