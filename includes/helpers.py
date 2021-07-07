@@ -24,4 +24,6 @@ def runRemoteFunction(runRemote,persistentData,functionCall,functionInputDict,el
                 if exitCode == 0:
                     return ast.literal_eval(stdout)
                 return { "error" : "Remote function failed", "stdout" : stdout, "stderr" : stderr, "exitCode" : exitCode }
-    return functionCall(functionInputDict)
+        return { "error" : "Remote function was not called", "stdout" : "", "stderr" : "", "exitCode" : -500 }
+    else:
+        return functionCall(functionInputDict)
