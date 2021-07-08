@@ -88,7 +88,7 @@ class cisco():
         
         self.channel.send("{0}{1}".format(command,"\n"))
         returnedData = self.recv()
-        if "% Invalid input detected at '^'" in returnedData or "% Incomplete command." in returnedData:
+        if returnedData == False or "% Invalid input detected at '^'" in returnedData or "% Incomplete command." in returnedData:
             return (None,"",returnedData)
         return (0, returnedData, "")
 
