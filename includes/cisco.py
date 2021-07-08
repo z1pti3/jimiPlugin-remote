@@ -90,7 +90,7 @@ class cisco():
         returnedData = self.recv()
         if "% Invalid input detected at '^'" in returnedData or "% Incomplete command." in returnedData:
             return (None,"",returnedData)
-        return (0, self.recv(), "")
+        return (0, returnedData, "")
 
     def reboot(self,timeout):
         # Not implimented yet!
