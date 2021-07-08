@@ -224,7 +224,7 @@ class _remoteCommand(action._action):
             if exitCode != None:
                 return {"result" : True, "rc" : exitCode, "msg" : "Command succesfull", "data" : output, "errors" : errors}
             else:
-                return {"result" : False, "rc" : 255, "msg" : client.error, "data" : "", "errors" : ""}
+                return {"result" : False, "rc" : 255, "msg" : client.error, "data" : output, "errors" : errors}
         else:
             return {"result" : False, "rc" : 403, "msg" : "No connection found"}
 
