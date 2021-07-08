@@ -87,6 +87,9 @@ class cisco():
             return (0, self.enable(self.enablePassword), "")
         
         self.channel.send("{0}{1}".format(command,"\n"))
+        returnedData = self.recv()
+        if "% Invalid input detected at '^'" in returnedData or "% Incomplete command." in returnedData:
+            return (-1,"",returnedData)
         return (0, self.recv(), "")
 
     def reboot(self,timeout):
