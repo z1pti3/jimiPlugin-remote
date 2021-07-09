@@ -5,39 +5,37 @@ from pathlib import Path
 import os
 import time
 
-class linux():
-    # client = None
+from plugins.remote.includes import remote
 
-    def __init__(self, host, username="root", keyFile='', password='',port_forward=False,port="",timeout=10):
-        self.error          = ""
-        self.host           = host
-        self.keyFile        = keyFile
-        self.username       = username
-        self.password       = password
-        self.port_forward   = port_forward
-        self.type = "linux"
-        
-        if port:
-            self.port           = int(port)     
+class linux(remote.remote()):
+
+    def __init__(self, host, username="root", keyFile='',password='', port=22, port_forward=False, remote_port="", timeout=10, enable_scp=True):
+        self.error = ""
+        self.host = host
+        self.keyFile = keyFile
+        self.username = username
+        self.password = password
+        self.port = int(port)
+        self.remote_port = int(remote_port)
+        self.port_forward = port_forward
+        self.type = "linux"  
 
         if not self.port_forward:
             if self.keyFile != '':
-                self.client = self.connect(self.host,self.username,keyFile=self.keyFile,password=self.password,timeout=timeout)
+                self.client = self.connect(self.host, self.username, keyFile=self.keyFile, password=self.password, port=self.port, timeout=timeout)
             else:
-                self.client = self.connect(self.host,self.username,password=self.password,timeout=timeout)          
+                self.client = self.connect(self.host, self.username, password=self.password, port=self.port, timeout=timeout)          
         else:
             if keyFile != '':
-                self.client,self.sshTunnel = self.connect(self.host,self.username,keyFile=self.keyFile,password=self.password,port_forward=self.port_forward,port=self.port,timeout=timeout)
-                
+                self.client,self.sshTunnel = self.connect(self.host, self.username, keyFile=self.keyFile, password=self.password, port=self.port, port_forward=self.port_forward, remote_port=self.remote_port, timeout=timeout)
                 self.tunnelPort = self.sshTunnel.local_bind_port
-                # print(f"Binded init port is {self.tunnelPort}")
             else:
-                self.client,self.sshTunnel = self.connect(self.host,self.username,keyFile=self.keyFile,port_forward=self.port_forward,port=self.port,timeout=timeout)
+                self.client,self.sshTunnel = self.connect(self.host, self.username, keyFile=self.keyFile, port=self.port, port_forward=self.port_forward, remote_port=self.remote_port, timeout=timeout)
         
-        if self.client:
-            self.scp    = self.connectSCP(self.client)
+        if self.client and enable_scp:
+            self.scp = self.connectSCP(self.client)
 
-    def connect(self,host,username,keyFile="",password='',port_forward=False,port="",timeout=10):
+    def connect(self, host, username, keyFile="", password='', port=22, port_forward=False, remote_port="", timeout=10):
         try: 
             client = SSHClient()
             client.load_system_host_keys()
@@ -46,26 +44,16 @@ class linux():
                 if self.keyFile != '':
                     try:  
                         if password != "":
-                            client.connect(host, username=username, key_filename=keyFile,passphrase=password, look_for_keys=True, timeout=timeout)
+                            client.connect(host, username=username, key_filename=keyFile, passphrase=password, port=port, look_for_keys=True, timeout=timeout)
                         else:
-                            client.connect(host, username=username, key_filename=keyFile, look_for_keys=True, timeout=timeout)
+                            client.connect(host, username=username, key_filename=keyFile, port=port, look_for_keys=True, timeout=timeout)
                         
-                        sshTunnel = SSHTunnelForwarder(
-                        (host, 22),
-                        ssh_pkey=keyFile,
-                        ssh_username=username,
-                        ssh_private_key_password=password,
-                        remote_bind_address=('127.0.0.1', port))
+                        sshTunnel = SSHTunnelForwarder((host, port), ssh_pkey=keyFile, ssh_username=username, ssh_private_key_password=password, remote_bind_address=('127.0.0.1', remote_port))
                     except Exception as e:
                         self.error = e
                         return None
                 else:
-                    sshTunnel = SSHTunnelForwarder(
-                    (host, 22),
-                    ssh_username=username,
-                    ssh_password=password,
-                    remote_bind_address=('127.0.0.1', port))
-
+                    sshTunnel = SSHTunnelForwarder((host, port), ssh_username=username, ssh_password=password, remote_bind_address=('127.0.0.1', remote_port))
                     client.connect(host, username=username, password=password, look_for_keys=True, timeout=10)
                 
                 sshTunnel.start()
@@ -77,13 +65,11 @@ class linux():
                             client.connect(host, username=username, key_filename=keyFile, passphrase=password, look_for_keys=True, timeout=10)
                         else:
                             client.connect(host, username=username, key_filename=keyFile, look_for_keys=True, timeout=10)
-
                     except Exception as e:
                         self.error = e
                         return None
                 else:
                     client.connect(host, username=username, password=password, look_for_keys=True, timeout=10)
-
                 return client
         except Exception as e:
             self.error = e
@@ -100,10 +86,6 @@ class linux():
         if self.port_forward:
             self.sshTunnel.stop()
             self.sshTunnel = None
-
-    def reboot(self,timeout):
-        # Not implimented yet!
-        pass
 
     def command(self, command, args=[], elevate=False, runAs=None, timeout=300):
         if self.client:

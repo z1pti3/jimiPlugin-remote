@@ -11,13 +11,12 @@ class _remote(plugin._plugin):
         model.registerModel("remoteDownload","_remoteDownload","_action","plugins.remote.models.action")
         model.registerModel("remoteUpload","_remoteUpload","_action","plugins.remote.models.action")
         model.registerModel("remoteDisconnect","_remoteDisconnect","_action","plugins.remote.models.action")
-        model.registerModel("remoteReboot","_remoteReboot","_action","plugins.remote.models.action")
-        model.registerModel("linuxStartPortForward","_remoteLinuxStartPortForward","_action","plugins.remote.models.action")        
-        model.registerModel("linuxStopPortForward","_remoteLinuxStopPortForward","_action","plugins.remote.models.action")   
+        model.registerModel("remoteReboot","_remoteReboot","_action","plugins.remote.models.action")   
         model.registerModel("remotePullWinEvents","_remotePullWinEvents","_trigger","plugins.remote.models.trigger")      
         model.registerModel("remoteConnectFortigate","_remoteConnectFortigate","_action","plugins.remote.models.action")
         model.registerModel("remoteMultiCommand","_remoteMultiCommand","_action","plugins.remote.models.action")
         model.registerModel("remoteConnectCisco","_remoteConnectCisco","_action","plugins.remote.models.action")
+        model.registerModel("remoteConnectWindowsPSExec","_remoteConnectWindowsPSExec","_action","plugins.remote.models.action")
         return True
         
 
@@ -34,6 +33,7 @@ class _remote(plugin._plugin):
         model.deregisterModel("remoteConnectFortigate","_remoteConnectFortigate","_action","plugins.remote.models.action")  
         model.deregisterModel("remoteMultiCommand","_remoteMultiCommand","_action","plugins.remote.models.action")
         model.deregisterModel("remoteConnectCisco","_remoteConnectCisco","_action","plugins.remote.models.action") 
+        model.deregisterModel("remoteConnectWindowsPSExec","_remoteConnectWindowsPSExec","_action","plugins.remote.models.action")
         return True
 
     def upgrade(self,LatestPluginVersion):
@@ -55,6 +55,10 @@ class _remote(plugin._plugin):
             model.registerModel("remoteMultiCommand","_remoteMultiCommand","_action","plugins.remote.models.action")
         if self.version < 1.42:
             model.registerModel("remoteConnectCisco","_remoteConnectCisco","_action","plugins.remote.models.action")
+        if self.version < 1.43:
+            model.registerModel("remoteConnectWindowsPSExec","_remoteConnectWindowsPSExec","_action","plugins.remote.models.action")
+            model.deregisterModel("linuxStartPortForward","_remoteLinuxStartPortForward","_action","plugins.remote.models.action")        
+            model.deregisterModel("linuxStopPortForward","_remoteLinuxStopPortForward","_action","plugins.remote.models.action")
         return True
 
 

@@ -9,14 +9,16 @@ class _remoteConnectLinux(action._action):
     user = str()
     keyfile = str()
     password = str()
+    port = 22
+    remote_port = str()
     isPortForward = bool()
-    port_forward = str()
     timeout = 10
+    enable_scp = True
     
     def doAction(self,data):
         host = helpers.evalString(self.host,{"data" : data["flowData"]})
         user = helpers.evalString(self.user,{"data" : data["flowData"]})
-        port = helpers.evalString(self.port_forward,{"data" : data["flowData"]})
+        remote_port = helpers.evalString(self.remote_port,{"data" : data["flowData"]})
         if self.password.startswith("ENC") and self.password != "":
             password = auth.getPasswordFromENC(self.password)
         elif "%%" in self.password:
@@ -28,19 +30,19 @@ class _remoteConnectLinux(action._action):
         if self.isPortForward:
             if keyfile != "":
                 if password:
-                    client= linux.linux(host,user,keyFile=keyfile,password=password,port_forward=True,port=port,timeout=self.timeout)
+                    client= linux.linux(host,user,keyFile=keyfile,password=password,port=self.port,port_forward=True,remote_port=remote_port,timeout=self.timeout,enable_scp=self.enable_scp)
                 else:
-                    client = linux.linux(host,user,keyFile=keyfile,port_forward=True,port=port,timeout=self.timeout)
+                    client = linux.linux(host,user,keyFile=keyfile,port=self.port,port_forward=True,remote_port=remote_port,timeout=self.timeout,enable_scp=self.enable_scp)
             else:
-                client = linux.linux(host,user,password=password,timeout=self.timeout)
+                client = linux.linux(host,user,password=password,port=self.port,timeout=self.timeout,enable_scp=self.enable_scp)
         else:
             if keyfile != "":
                 if password != "":
-                    client = linux.linux(host,user,keyFile=keyfile,password=password,timeout=self.timeout)
+                    client = linux.linux(host,user,keyFile=keyfile,password=password,port=self.port,timeout=self.timeout,enable_scp=self.enable_scp)
                 else:
-                    client = linux.linux(host,user,keyFile=keyfile,timeout=self.timeout)
+                    client = linux.linux(host,user,keyFile=keyfile,port=self.port,timeout=self.timeout,enable_scp=self.enable_scp)
             else:
-                client = linux.linux(host,user,password=password,timeout=self.timeout)
+                client = linux.linux(host,user,password=password,port=self.port,timeout=self.timeout,enable_scp=self.enable_scp)
 
         if client.client != None:
             data["eventData"]["remote"]={}
@@ -57,39 +59,6 @@ class _remoteConnectLinux(action._action):
             self.password = "ENC {0}".format(auth.getENCFromPassword(value))
             return True
         return super(_remoteConnectLinux, self).setAttribute(attr,value,sessionData=sessionData)
-
-class _remoteLinuxStartPortForward(action._action):
-
-    def doAction(self,data):
-        try:
-            client = data["eventData"]["remote"]["client"]
-        except KeyError:
-            client = None
-
-        if client:                
-            test,port = client.start_port_forward()
-            data["eventData"]["remote"]["port"] = port
-            data["eventData"]["remote"]["portForwardStatus"] = True
-            return {"result" : True, "rc" : 0, "msg" : "Port forwarding started", "portForwardStatus" : True}
-        else:
-            return {"result" : False, "rc" : 403, "msg" : "No connection found"}
-
-class _remoteLinuxStopPortForward(action._action):
-
-    def doAction(self,data):
-        try:
-            client = data["eventData"]["remote"]["client"]
-            port = data["eventData"]["remote"]["port"]
-        except KeyError:
-            client = None
-            port = None
-
-        if client and port:    
-            client.stop_port_forward(client)
-            data["eventData"]["remote"]["portForwardStatus"] = False
-            return {"result" : True, "rc" : 0, "msg" : "Port forwarding stopped"}
-        else:
-            return {"result" : False, "rc" : 403, "msg" : "No connection found"}
 
 class _remoteConnectWindows(action._action):
     host = str()
@@ -117,6 +86,33 @@ class _remoteConnectWindows(action._action):
             self.password = "ENC {0}".format(auth.getENCFromPassword(value))
             return True
         return super(_remoteConnectWindows, self).setAttribute(attr,value,sessionData=sessionData)
+
+class _remoteConnectWindowsPSExec(action._action):
+    host = str()
+    user = str()
+    password = str()
+    use_encryption = True
+
+    def doAction(self,data):
+        host = helpers.evalString(self.host,{"data" : data["flowData"]})
+        user = helpers.evalString(self.user,{"data" : data["flowData"]})
+        if self.password.startswith("ENC"):
+            password = auth.getPasswordFromENC(self.password)
+        elif "%%" in self.password:
+            password = helpers.evalString(self.password,{"data" : data["flowData"]})
+
+        client = windows.windowsPSExec(host,user,password,self.use_encryption)
+        if client.client != None:
+            data["eventData"]["remote"]={"client" : client}
+            return {"result" : True, "rc" : 0, "msg" : "Connection successful"}
+        else:
+            return {"result" : False, "rc" : 403, "msg" : "Connection failed - {0}".format(client.error)}
+
+    def setAttribute(self,attr,value,sessionData=None):
+        if attr == "password" and not value.startswith("ENC ") and not re.match(".*%%.*%%",value):
+            self.password = "ENC {0}".format(auth.getENCFromPassword(value))
+            return True
+        return super(_remoteConnectWindowsPSExec, self).setAttribute(attr,value,sessionData=sessionData)
 
 class _remoteConnectFortigate(action._action):
     host = str()
@@ -208,18 +204,20 @@ class _remoteDisconnect(action._action):
 
 class _remoteCommand(action._action):
     command = str()
+    arguments = list()
     elevate = bool()
     runAs = str()
     timeout = 300
 
     def doAction(self,data):
         command = helpers.evalString(self.command,{"data" : data["flowData"]})
+        arguments = helpers.evalList(self.arguments,{"data" : data["flowData"]})
         try:
             client = data["eventData"]["remote"]["client"]
         except KeyError:
             client = None
         if client:
-            exitCode, output, errors = client.command(command,elevate=self.elevate,runAs=self.runAs,timeout=self.timeout)
+            exitCode, output, errors = client.command(command,args=arguments,elevate=self.elevate,runAs=self.runAs,timeout=self.timeout)
             
             if exitCode != None:
                 return {"result" : True, "rc" : exitCode, "msg" : "Command succesfull", "data" : output, "errors" : errors}
@@ -248,6 +246,9 @@ class _remoteMultiCommand(action._action):
             else:
                 commands = [commands]
             for command in commands:
+                if " " in command:
+                    args = command.split(" ")[1:]
+                    command = command.split(" ")[0]
                 exitCode, output, errors = client.command(command,elevate=self.elevate,runAs=self.runAs,timeout=self.timeout)
                 if exitCode != None:
                     commandResults.append({"result" : True, "rc" : exitCode, "msg" : "Command succesfull", "data" : output, "command":command, "errors" : errors})

@@ -1,7 +1,7 @@
 {
    "name": "remote",
    "author": "z1p, b1scuit-thi3f, TerrifiedBug, TheCypherGoat",
-   "version": 1.43,
+   "version": 1.44,
    "categories": ["remote","automation"],
    "description": "jimi IT automation framework to carry out remote tasks on workstations, servers, etc",
    "icon": null,
@@ -124,6 +124,13 @@
                "description": ""
             },
             {
+               "schema_item": "port",
+               "schema_value": "port",
+               "type": "input",
+               "label": "port",
+               "description": ""
+            },
+            {
                "schema_item": "isPortForward",
                "schema_value": "isPortForward",
                "type": "checkbox",
@@ -131,10 +138,10 @@
                "description": ""
             },
             {
-               "schema_item": "port_forward",
-               "schema_value": "port_forward",
+               "schema_item": "remote_port",
+               "schema_value": "remote_port",
                "type": "input",
-               "label": "port_forward",
+               "label": "remote_port",
                "description": ""
             },
             {
@@ -142,6 +149,13 @@
                "schema_value": "timeout",
                "type": "input",
                "label": "timeout",
+               "description": ""
+            },
+            {
+               "schema_item": "enable_scp",
+               "schema_value": "enable_scp",
+               "type": "checkbox",
+               "label": "enable_scp",
                "description": ""
             }
          ],
@@ -268,6 +282,67 @@
                "type": "checkbox",
                "label": "enable_smb",
                "description": "Enabled SMB connection as well as winRM. Default is True."
+            }
+         ],
+         "data_out": {
+            "result": {
+               "description": "Returns True when successful.",
+               "type": "boolean",
+               "always_present": true,
+               "values": {
+                  "True": {
+                     "description": "Successful."
+                  },
+                  "False": {
+                     "description": "Failure."
+                  }
+               }
+            },
+            "rc": {
+               "description": "Returns the exit code for the action.",
+               "type": "number",
+               "always_present": true,
+               "values": {
+                  "0": {
+                     "description": "Successful."
+                  }
+               }
+            }
+         }
+      },
+      "remoteConnectWindowsPSExec": {
+         "display_name": "_remoteConnectWindowsPSExec",
+         "className": "remoteConnectWindowsPSExec",
+         "class_location": "models.action",
+         "description": "Connect to a windows system using PSExec method over SMB/RPC.",
+         "fields": [
+            {
+               "schema_item": "host",
+               "schema_value": "host",
+               "type": "input",
+               "label": "host",
+               "description": ""
+            },
+            {
+               "schema_item": "user",
+               "schema_value": "user",
+               "type": "input",
+               "label": "user",
+               "description": ""
+            },
+            {
+               "schema_item": "password",
+               "schema_value": "password",
+               "type": "input",
+               "label": "password",
+               "description": ""
+            },
+            {
+               "schema_item": "use_encryption",
+               "schema_value": "use_encryption",
+               "type": "checkbox",
+               "label": "use_encryption",
+               "description": "Requires SMBv3 and enforces encryption."
             }
          ],
          "data_out": {
@@ -497,6 +572,13 @@
                "schema_value": "command",
                "type": "input",
                "label": "command",
+               "description": ""
+            },
+            {
+               "schema_item": "arguments",
+               "schema_value": "arguments",
+               "type": "input-json",
+               "label": "arguments",
                "description": ""
             },
             {

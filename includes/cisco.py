@@ -2,7 +2,9 @@ from paramiko import SSHClient, AutoAddPolicy
 import time
 import re
 
-class cisco():
+from plugins.remote.includes import remote
+
+class cisco(remote.remote()):
 
     def __init__(self, host, deviceHostname, username="Admin", password='', enablePassword="", port=22, maxRecvTime=5):
         self.host = host
@@ -85,27 +87,11 @@ class cisco():
     def command(self, command, args=[], elevate=False, runAs=None, timeout=None):
         if command == "enable":
             return (0, self.enable(self.enablePassword), "")
-        
-        self.channel.send("{0}{1}".format(command,"\r\n"))
+        self.channel.send("{0}{1}".format(command,"\n"))
         returnedData = self.recv()
         if returnedData == False or "% Invalid input detected at '^'" in returnedData or "% Incomplete command." in returnedData:
             return (None,"",returnedData)
         return (0, returnedData, "")
-
-    def reboot(self,timeout):
-        # Not implimented yet!
-        self.error = "Not implimented"
-        pass
-
-    def upload(self, localFile, remotePath):
-        # Not supported!
-        self.error = "Not supported"
-        return False
-
-    def download(self, remoteFile, localPath, createMissingFolders):
-        # Not supported!
-        self.error = "Not supported"
-        return False
 
     def __del__(self):
         self.disconnect()

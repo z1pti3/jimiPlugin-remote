@@ -3,3 +3,4 @@ pywinrm
 smbprotocol
 scp
 sshtunnel
+pypsexec
