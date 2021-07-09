@@ -21,12 +21,12 @@ class cisco(remote.remote()):
             client = SSHClient()
             client.load_system_host_keys()
             client.set_missing_host_key_policy(AutoAddPolicy())   
-            client.connect(self.host, username=username, password=password, port=port, look_for_keys=True, timeout=5000)
+            client.connect(self.host, username=username, password=password, port=port, look_for_keys=True, timeout=10)
             self.channel = client.invoke_shell()
             detectedDevice = self.channel.recv(len(self.deviceHostname)+2).decode().strip()
             if detectedDevice != self.deviceHostname:
-                self.error = "Device detected name does not match the device name provided."
-                self.disconnect()
+                self.error = f"Device detected name does not match the device name provided. Hostname found = {detectedDevice}"
+                client.close()
                 return None
             return client
         except Exception as e:
@@ -87,10 +87,11 @@ class cisco(remote.remote()):
     def command(self, command, args=[], elevate=False, runAs=None, timeout=None):
         if command == "enable":
             return (0, self.enable(self.enablePassword), "")
-        if args:
-            command = command + " ".join(args)
         self.channel.send("{0}{1}".format(command,"\n"))
-        return (0, self.recv(), "")
+        returnedData = self.recv()
+        if returnedData == False or "% Invalid input detected at '^'" in returnedData or "% Incomplete command." in returnedData:
+            return (None,"",returnedData)
+        return (0, returnedData, "")
 
     def __del__(self):
         self.disconnect()
