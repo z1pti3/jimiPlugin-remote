@@ -24,7 +24,7 @@ class cisco():
             detectedDevice = self.channel.recv(len(self.deviceHostname)+2).decode().strip()
             if detectedDevice != self.deviceHostname:
                 self.error = f"Device detected name does not match the device name provided. Hostname found = {detectedDevice}"
-                self.disconnect()
+                client.close()
                 return None
             return client
         except Exception as e:
