@@ -6,11 +6,11 @@ from plugins.remote.includes import remote
 
 class fortigate(remote.remote):
 
-    def __init__(self, host, deviceHostname, username="admin", password='', port=22, maxRecvTime=5):
+    def __init__(self, host, deviceHostname, username="admin", password='', port=22, timeout=5):
         self.host = host
         self.deviceHostname = deviceHostname
         self.port = port
-        self.maxRecvTime = maxRecvTime
+        self.timeout = timeout
         self.error = ""  
         self.type = "fortigate"
 
@@ -21,7 +21,7 @@ class fortigate(remote.remote):
             client = SSHClient()
             client.load_system_host_keys()
             client.set_missing_host_key_policy(AutoAddPolicy())   
-            client.connect(host, username=username, password=password, port=self.port, look_for_keys=True, timeout=10)
+            client.connect(host, username=username, password=password, port=self.port, look_for_keys=True, timeout=self.timeout)
             self.channel = client.invoke_shell()
             detectedDevice = self.channel.recv(len(self.deviceHostname)+2).decode().strip()
             if detectedDevice != "{0} #".format(self.deviceHostname) and detectedDevice != "{0} $".format(self.deviceHostname):
@@ -54,7 +54,7 @@ class fortigate(remote.remote):
 
     def command(self, command, args=[], elevate=False, runAs=None, timeout=None):
         if args:
-            command = command + " ".join(args)
+            command = command + " " + " ".join(args)
         self.channel.send("{0}{1}".format(command,"\n"))
         return (0, self.recv(), "")
 

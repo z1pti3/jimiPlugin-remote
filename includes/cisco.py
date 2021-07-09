@@ -6,10 +6,10 @@ from plugins.remote.includes import remote
 
 class cisco(remote.remote):
 
-    def __init__(self, host, deviceHostname, username="Admin", password='', enablePassword="", port=22, maxRecvTime=5):
+    def __init__(self, host, deviceHostname, username="Admin", password='', enablePassword="", port=22, timeout=5):
         self.host = host
         self.deviceHostname = deviceHostname
-        self.maxRecvTime = maxRecvTime
+        self.timeout = timeout
         self.enablePassword = enablePassword
         self.error = "" 
         self.type = "cisco"
@@ -21,7 +21,7 @@ class cisco(remote.remote):
             client = SSHClient()
             client.load_system_host_keys()
             client.set_missing_host_key_policy(AutoAddPolicy())   
-            client.connect(self.host, username=username, password=password, port=port, look_for_keys=True, timeout=10)
+            client.connect(self.host, username=username, password=password, port=port, look_for_keys=True, timeout=self.timeout)
             self.channel = client.invoke_shell()
             detectedDevice = self.channel.recv(len(self.deviceHostname)+2).decode().strip()
             if detectedDevice != self.deviceHostname:
@@ -46,11 +46,11 @@ class cisco(remote.remote):
             self.client.close()
             self.client = None
 
-    def awaitStringRecv(self,awaitString):
+    def awaitStringRecv(self,awaitString,timeout=5):
         startTime = time.time()
         recvBuffer = ""
         result = False
-        while ( time.time() - startTime < self.maxRecvTime ):
+        while ( time.time() - startTime < timeout ):
             if self.channel.recv_ready():
                 recvBuffer += self.channel.recv(1024).decode().strip()
                 if recvBuffer.split('\n')[-1] == "--More--":
@@ -65,11 +65,11 @@ class cisco(remote.remote):
 
         return False
 
-    def recv(self):
+    def recv(self,timeout=5):
         startTime = time.time()
         recvBuffer = ""
         result = False
-        while ( time.time() - startTime < self.maxRecvTime ):
+        while ( time.time() - startTime < timeout ):
             if self.channel.recv_ready():
                 recvBuffer += self.channel.recv(1024).decode().strip()
                 if recvBuffer.split('\n')[-1].endswith("--More--"):
@@ -84,11 +84,13 @@ class cisco(remote.remote):
 
         return False
 
-    def command(self, command, args=[], elevate=False, runAs=None, timeout=None):
+    def command(self, command, args=[], elevate=False, runAs=None, timeout=5):
         if command == "enable":
             return (0, self.enable(self.enablePassword), "")
+        if args:
+            command = command + " " + " ".join(args)
         self.channel.send("{0}{1}".format(command,"\n"))
-        returnedData = self.recv()
+        returnedData = self.recv(timeout)
         if returnedData == False or "% Invalid input detected at '^'" in returnedData or "% Incomplete command." in returnedData:
             return (None,"",returnedData)
         return (0, returnedData, "")

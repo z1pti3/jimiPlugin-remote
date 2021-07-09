@@ -120,7 +120,7 @@ class _remoteConnectFortigate(action._action):
     deviceHostname = str()
     user = str()
     password = str()
-    maxRecvTime = 5
+    timeout = 5
 
     def doAction(self,data):
         host = helpers.evalString(self.host,{"data" : data["flowData"]})
@@ -134,7 +134,7 @@ class _remoteConnectFortigate(action._action):
         else:
             password = ""
 
-        client = fortigate.fortigate(host,deviceHostname,user,password=password,port=port,maxRecvTime=self.maxRecvTime)
+        client = fortigate.fortigate(host,deviceHostname,user,password=password,port=port,maxRecvTime=self.timeout)
 
         if client.client != None:
             data["eventData"]["remote"]={"client" : client}
@@ -155,7 +155,7 @@ class _remoteConnectCisco(action._action):
     ssh_username = str()
     ssh_password = str()
     enable_password = str()
-    maxRecvTime = 5
+    timeout = 5
 
     def doAction(self,data):
         host = helpers.evalString(self.host,{"data" : data["flowData"]})
@@ -175,7 +175,7 @@ class _remoteConnectCisco(action._action):
         else:
             enable_password = ""
 
-        client = cisco.cisco(host,deviceHostname,ssh_username,ssh_password,enable_password,port,self.maxRecvTime)
+        client = cisco.cisco(host,deviceHostname,ssh_username,ssh_password,enable_password,port,self.timeout)
 
         if client.client != None:
             data["eventData"]["remote"]={"client" : client}
@@ -246,10 +246,11 @@ class _remoteMultiCommand(action._action):
             else:
                 commands = [commands]
             for command in commands:
+                args = []
                 if " " in command:
                     args = command.split(" ")[1:]
                     command = command.split(" ")[0]
-                exitCode, output, errors = client.command(command,elevate=self.elevate,runAs=self.runAs,timeout=self.timeout)
+                exitCode, output, errors = client.command(command,args=args,elevate=self.elevate,runAs=self.runAs,timeout=self.timeout)
                 if exitCode != None:
                     commandResults.append({"result" : True, "rc" : exitCode, "msg" : "Command succesfull", "data" : output, "command":command, "errors" : errors})
                 else:
