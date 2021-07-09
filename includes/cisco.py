@@ -19,7 +19,7 @@ class cisco():
             client = SSHClient()
             client.load_system_host_keys()
             client.set_missing_host_key_policy(AutoAddPolicy())   
-            client.connect(self.host, username=username, password=password, port=port, look_for_keys=True, timeout=5000)
+            client.connect(self.host, username=username, password=password, port=port, look_for_keys=True, timeout=10)
             self.channel = client.invoke_shell()
             detectedDevice = self.channel.recv(len(self.deviceHostname)+2).decode().strip()
             if detectedDevice != self.deviceHostname:

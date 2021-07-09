@@ -66,7 +66,7 @@ class linux():
                     ssh_password=password,
                     remote_bind_address=('127.0.0.1', port))
 
-                    client.connect(host, username=username, password=password, look_for_keys=True, timeout=5000)
+                    client.connect(host, username=username, password=password, look_for_keys=True, timeout=10)
                 
                 sshTunnel.start()
                 return client,sshTunnel
@@ -74,15 +74,15 @@ class linux():
                 if keyFile != '':
                     try:
                         if password != "":
-                            client.connect(host, username=username, key_filename=keyFile, passphrase=password, look_for_keys=True, timeout=5000)
+                            client.connect(host, username=username, key_filename=keyFile, passphrase=password, look_for_keys=True, timeout=10)
                         else:
-                            client.connect(host, username=username, key_filename=keyFile, look_for_keys=True, timeout=5000)
+                            client.connect(host, username=username, key_filename=keyFile, look_for_keys=True, timeout=10)
 
                     except Exception as e:
                         self.error = e
                         return None
                 else:
-                    client.connect(host, username=username, password=password, look_for_keys=True, timeout=5000)
+                    client.connect(host, username=username, password=password, look_for_keys=True, timeout=10)
 
                 return client
         except Exception as e:
