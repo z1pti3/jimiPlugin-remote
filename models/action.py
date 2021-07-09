@@ -253,6 +253,7 @@ class _remoteMultiCommand(action._action):
                     commandResults.append({"result" : True, "rc" : exitCode, "msg" : "Command succesfull", "data" : output, "command":command, "errors" : errors})
                 else:
                     if self.exitOnFailure:
+                        commandResults.append({"result" : False, "rc" : 255, "msg" : client.error, "data" : output, "errors" : "", "command":command})
                         return {"result" : False, "rc" : 255, "msg" : client.error, "commands" : commandResults, "errors" : ""}
                     else:
                         commandResults.append({"result" : False, "rc" : 255, "msg" : client.error, "data" : output, "errors" : "", "command":command})
