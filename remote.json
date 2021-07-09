@@ -1,7 +1,7 @@
 {
    "name": "remote",
    "author": "z1p, b1scuit-thi3f, TerrifiedBug, TheCypherGoat",
-   "version": 1.44,
+   "version": 1.45,
    "categories": ["remote","automation"],
    "description": "jimi IT automation framework to carry out remote tasks on workstations, servers, etc",
    "icon": null,

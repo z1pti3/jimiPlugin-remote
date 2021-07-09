@@ -38,10 +38,10 @@ class fortigate(remote.remote):
             self.client.close()
             self.client = None
 
-    def recv(self):
+    def recv(self,timeout):
         startTime = time.time()
         recvBuffer = ""
-        while ( time.time() - startTime < self.maxRecvTime ):
+        while ( time.time() - startTime < timeout ):
             if self.channel.recv_ready():
                 recvBuffer += self.channel.recv(1024).decode().strip()
                 if recvBuffer.split('\n')[-1] == "--More--":
@@ -52,11 +52,27 @@ class fortigate(remote.remote):
             time.sleep(0.1)
         return recvBuffer
 
-    def command(self, command, args=[], elevate=False, runAs=None, timeout=None):
+    def sendCommand(self,command,attempt=0):
+        if attempt > 3:
+            return False
+        sentBytes = self.channel.send("{0}{1}".format(command,"\n"))
+        recvBuffer = ""
+        startTime = time.time()
+        while time.time() - startTime < 5:
+            recvBuffer += self.channel.recv(sentBytes-len(recvBuffer.encode())).decode()
+            if command in recvBuffer:
+                return True
+            time.sleep(0.1)
+        self.sendCommand(command,attempt+1)
+        
+    def command(self, command, args=[], elevate=False, runAs=None, timeout=5):
         if args:
             command = command + " " + " ".join(args)
-        self.channel.send("{0}{1}".format(command,"\n"))
-        return (0, self.recv(), "")
+        if self.sendCommand(command):
+            returnedData = self.recv(timeout)
+        else:
+            return (None,"","Unable to send command")
+        return (0, returnedData, "")
 
     def __del__(self):
         self.disconnect()

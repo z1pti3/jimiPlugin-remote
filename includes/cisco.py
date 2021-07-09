@@ -13,7 +13,6 @@ class cisco(remote.remote):
         self.enablePassword = enablePassword
         self.error = "" 
         self.type = "cisco"
-
         self.client = self.connect(username,password,port)
 
     def connect(self,username,password,port):
@@ -62,7 +61,6 @@ class cisco(remote.remote):
             time.sleep(0.1)
         if result:
             return recvBuffer
-
         return False
 
     def recv(self,timeout=5):
@@ -81,17 +79,31 @@ class cisco(remote.remote):
             time.sleep(0.1)
         if result:
             return recvBuffer
-
         return False
 
+    def sendCommand(self,command,attempt=0):
+        if attempt > 3:
+            return False
+        sentBytes = self.channel.send("{0}{1}".format(command,"\n"))
+        recvBuffer = ""
+        startTime = time.time()
+        while time.time() - startTime < 5:
+            recvBuffer += self.channel.recv(sentBytes-len(recvBuffer.encode())).decode()
+            if command in recvBuffer:
+                return True
+            time.sleep(0.1)
+        self.sendCommand(command,attempt+1)
+        
     def command(self, command, args=[], elevate=False, runAs=None, timeout=5):
         if command == "enable":
             return (0, self.enable(self.enablePassword), "")
         if args:
             command = command + " " + " ".join(args)
-        self.channel.send("{0}{1}".format(command,"\n"))
-        returnedData = self.recv(timeout)
-        if returnedData == False or "% Invalid input detected at '^'" in returnedData or "% Incomplete command." in returnedData:
+        if self.sendCommand(command):
+            returnedData = self.recv(timeout)
+        else:
+            return (None,"","Unable to send command")
+        if returnedData == False or "% Invalid input detected at '^'" in returnedData or "% Incomplete command." in returnedData or "Command rejected" in returnedData:
             return (None,"",returnedData)
         return (0, returnedData, "")
 

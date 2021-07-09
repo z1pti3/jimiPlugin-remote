@@ -207,7 +207,7 @@ class _remoteCommand(action._action):
     arguments = list()
     elevate = bool()
     runAs = str()
-    timeout = 300
+    timeout = 60
 
     def doAction(self,data):
         command = helpers.evalString(self.command,{"data" : data["flowData"]})
@@ -230,7 +230,7 @@ class _remoteMultiCommand(action._action):
     commands = str()
     elevate = bool()
     runAs = str()
-    timeout = 300
+    timeout = 60
     exitOnFailure = True
 
     def doAction(self,data):
@@ -252,13 +252,13 @@ class _remoteMultiCommand(action._action):
                     command = command.split(" ")[0]
                 exitCode, output, errors = client.command(command,args=args,elevate=self.elevate,runAs=self.runAs,timeout=self.timeout)
                 if exitCode != None:
-                    commandResults.append({"result" : True, "rc" : exitCode, "msg" : "Command succesfull", "data" : output, "command":command, "errors" : errors})
+                    commandResults.append({"result" : True, "rc" : exitCode, "msg" : "Command succesfull", "data" : output, "command":"{0} {1}".format(command," ".join(args)), "errors" : errors})
                 else:
                     if self.exitOnFailure:
-                        commandResults.append({"result" : False, "rc" : 255, "msg" : client.error, "data" : output, "errors" : "", "command":command})
-                        return {"result" : False, "rc" : 255, "msg" : client.error, "commands" : commandResults, "errors" : ""}
+                        commandResults.append({"result" : False, "rc" : 255, "msg" : client.error, "data" : output, "errors" : errors, "command":"{0} {1}".format(command," ".join(args))})
+                        return {"result" : False, "rc" : 255, "msg" : client.error, "commands" : commandResults, "errors" : errors}
                     else:
-                        commandResults.append({"result" : False, "rc" : 255, "msg" : client.error, "data" : output, "errors" : "", "command":command})
+                        commandResults.append({"result" : False, "rc" : 255, "msg" : client.error, "data" : output, "errors" : errors, "command":"{0} {1}".format(command," ".join(args))})
 
             return {"result" : True, "rc" : 0, "msg" : "All commands ran", "commands" : commandResults, "errors" : ""}
             
