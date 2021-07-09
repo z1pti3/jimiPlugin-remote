@@ -11,7 +11,7 @@ from pypsexec.client import Client
 
 from plugins.remote.includes import remote
 
-class windowsPSExec(remote.remote()):
+class windowsPSExec(remote.remote):
 
     def __init__(self, host, username="administrator", password="", encrypt=True):
         self.host = host
@@ -44,7 +44,7 @@ class windowsPSExec(remote.remote()):
                 response, errors, exitCode = self.client.run_executable(command, arguments=" ".join(args), timeout_seconds=timeout)
             return (exitCode, response, errors)
 
-class windows(remote.remote()):
+class windows(remote.remote):
 
     def __init__(self, host, username="administrator", password="", smb=True):
         self.host = host

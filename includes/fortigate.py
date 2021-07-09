@@ -4,7 +4,7 @@ import re
 
 from plugins.remote.includes import remote
 
-class fortigate(remote.remote()):
+class fortigate(remote.remote):
 
     def __init__(self, host, deviceHostname, username="admin", password='', port=22, maxRecvTime=5):
         self.host = host

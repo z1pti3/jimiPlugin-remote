@@ -4,7 +4,7 @@ import re
 
 from plugins.remote.includes import remote
 
-class cisco(remote.remote()):
+class cisco(remote.remote):
 
     def __init__(self, host, deviceHostname, username="Admin", password='', enablePassword="", port=22, maxRecvTime=5):
         self.host = host

@@ -7,7 +7,7 @@ import time
 
 from plugins.remote.includes import remote
 
-class linux(remote.remote()):
+class linux(remote.remote):
 
     def __init__(self, host, username="root", keyFile='',password='', port=22, port_forward=False, remote_port="", timeout=10, enable_scp=True):
         self.error = ""
