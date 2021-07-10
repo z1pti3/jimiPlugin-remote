@@ -127,6 +127,8 @@ class _remoteConnectFortigate(action._action):
     def doAction(self,data):
         host = helpers.evalString(self.host,{"data" : data["flowData"]})
         port = helpers.evalString(self.port,{"data" : data["flowData"]})
+        if not port:
+            port = 22
         deviceHostname = helpers.evalString(self.deviceHostname,{"data" : data["flowData"]})
         user = helpers.evalString(self.user,{"data" : data["flowData"]})
         if self.password.startswith("ENC"):
@@ -162,6 +164,8 @@ class _remoteConnectCisco(action._action):
     def doAction(self,data):
         host = helpers.evalString(self.host,{"data" : data["flowData"]})
         port = helpers.evalString(self.port,{"data" : data["flowData"]})
+        if not port:
+            port = 22
         deviceHostname = helpers.evalString(self.deviceHostname,{"data" : data["flowData"]})
         ssh_username = helpers.evalString(self.ssh_username,{"data" : data["flowData"]})
         if self.ssh_password.startswith("ENC"):
