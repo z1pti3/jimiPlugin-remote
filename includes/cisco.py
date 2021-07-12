@@ -67,7 +67,7 @@ class cisco(remote.remote):
 
     def recv(self,timeout=5):
         startTime = time.time()
-        deviceHostname = self.deviceHostname
+        deviceHostname = self.deviceHostname()
         if len(deviceHostname) >= 20:
             deviceHostname = deviceHostname[:20]
         recvBuffer = ""
