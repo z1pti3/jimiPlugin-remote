@@ -40,7 +40,7 @@ class cisco(remote.remote):
             if self.recv():
                 return True
         return False
-
+    
     def disconnect(self):
         if self.client:
             self.client.close()
@@ -99,6 +99,14 @@ class cisco(remote.remote):
     def command(self, command, args=[], elevate=False, runAs=None, timeout=5):
         if command == "enable":
             return (0, self.enable(self.enablePassword), "")
+        elif command == "copy running-config startup-config":
+            returnedData = ""
+            self.sendCommand(command)
+            if self.awaitStringRecv("Destination filename [startup-config]?"):
+                self.sendCommand("")
+                returnedData = self.recv(timeout)
+            return (0, returnedData, "")
+
         if args:
             command = command + " " + " ".join(args)
         if self.sendCommand(command):
