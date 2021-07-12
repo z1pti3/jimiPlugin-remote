@@ -23,10 +23,13 @@ class cisco(remote.remote):
             client.set_missing_host_key_policy(AutoAddPolicy())   
             client.connect(self.host, username=username, password=password, port=port, look_for_keys=True, timeout=self.timeout)
             self.channel = client.invoke_shell()
-            self.command("")
             if not self.recv():
                 self.command("")
-                detectedDevice = self.channel.recv(len(self.deviceHostname)+2).decode().strip()
+                startTime = time.time()
+                detectedDevice = ""
+                while ( time.time() - startTime < 5 ):
+                    if self.channel.recv_ready():
+                        detectedDevice = self.channel.recv(len(self.deviceHostname)+2).decode().strip()
                 self.error = f"Device detected name does not match the device name provided. Hostname found = {detectedDevice}"
                 client.close()
                 return None
@@ -42,7 +45,7 @@ class cisco(remote.remote):
             if self.recv():
                 return True
         return False
-
+    
     def disconnect(self):
         if self.client:
             self.client.close()
@@ -68,6 +71,9 @@ class cisco(remote.remote):
 
     def recv(self,timeout=5):
         startTime = time.time()
+        deviceHostname = self.deviceHostname()
+        if len(deviceHostname) >= 20:
+            deviceHostname = deviceHostname[:20]
         recvBuffer = ""
         result = False
         while ( time.time() - startTime < timeout ):
@@ -76,7 +82,7 @@ class cisco(remote.remote):
                 if recvBuffer.split('\n')[-1].endswith("--More--"):
                     self.channel.send(" ")
                     recvBuffer = recvBuffer[:-8]
-                elif recvBuffer.split('\n')[-1].startswith(self.deviceHostname):
+                elif recvBuffer.split('\n')[-1].startswith(deviceHostname):
                     result = True
                     break 
             time.sleep(0.1)
@@ -91,7 +97,8 @@ class cisco(remote.remote):
         recvBuffer = ""
         startTime = time.time()
         while time.time() - startTime < 5:
-            recvBuffer += self.channel.recv(sentBytes-len(recvBuffer.encode())).decode()
+            if self.channel.recv_ready():
+                recvBuffer += self.channel.recv(sentBytes-len(recvBuffer.encode())).decode()
             if command in recvBuffer:
                 return True
             time.sleep(0.1)
@@ -101,6 +108,13 @@ class cisco(remote.remote):
     def command(self, command, args=[], elevate=False, runAs=None, timeout=5):
         if command == "enable":
             return (0, self.enable(self.enablePassword), "")
+        elif command == "copy running-config startup-config":
+            returnedData = ""
+            self.sendCommand(command)
+            if self.awaitStringRecv("Destination filename [startup-config]?"):
+                self.sendCommand("")
+                returnedData = self.recv(timeout)
+            return (0, returnedData, "")
         if args:
             command = command + " " + " ".join(args)
         if self.sendCommand(command):
