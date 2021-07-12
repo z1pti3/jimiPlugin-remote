@@ -23,8 +23,10 @@ class cisco(remote.remote):
             client.set_missing_host_key_policy(AutoAddPolicy())   
             client.connect(self.host, username=username, password=password, port=port, look_for_keys=True, timeout=self.timeout)
             self.channel = client.invoke_shell()
-            detectedDevice = self.channel.recv(len(self.deviceHostname)+2).decode().strip()
-            if detectedDevice != self.deviceHostname:
+            self.command("")
+            if not self.recv():
+                self.command("")
+                detectedDevice = self.channel.recv(len(self.deviceHostname)+2).decode().strip()
                 self.error = f"Device detected name does not match the device name provided. Hostname found = {detectedDevice}"
                 client.close()
                 return None
