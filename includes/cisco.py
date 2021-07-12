@@ -66,6 +66,9 @@ class cisco(remote.remote):
 
     def recv(self,timeout=5):
         startTime = time.time()
+        deviceHostname = self.deviceHostname()
+        if len(deviceHostname) >= 20:
+            deviceHostname = deviceHostname[:20]
         recvBuffer = ""
         result = False
         while ( time.time() - startTime < timeout ):
@@ -74,7 +77,7 @@ class cisco(remote.remote):
                 if recvBuffer.split('\n')[-1].endswith("--More--"):
                     self.channel.send(" ")
                     recvBuffer = recvBuffer[:-8]
-                elif recvBuffer.split('\n')[-1].startswith(self.deviceHostname):
+                elif recvBuffer.split('\n')[-1].startswith(deviceHostname):
                     result = True
                     break 
             time.sleep(0.1)
