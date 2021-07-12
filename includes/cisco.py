@@ -41,7 +41,7 @@ class cisco(remote.remote):
             if self.recv():
                 return True
         return False
-
+    
     def disconnect(self):
         if self.client:
             self.client.close()
