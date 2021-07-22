@@ -138,7 +138,7 @@ class _remoteConnectFortigate(action._action):
         else:
             password = ""
 
-        client = fortigate.fortigate(host,deviceHostname,user,password=password,port=port,maxRecvTime=self.timeout)
+        client = fortigate.fortigate(host,deviceHostname,user,password=password,port=port,timeout=self.timeout)
 
         if client.client != None:
             data["eventData"]["remote"]={"client" : client}
