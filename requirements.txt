@@ -4,3 +4,4 @@ smbprotocol
 scp
 sshtunnel
 pypsexec
+netmiko
