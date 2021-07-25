@@ -48,7 +48,7 @@ class cisco(remote.remote):
         if command == "enable":
             try:
                 self.client.enable()
-                return (0, "test")
+                return (0, "enabled")
             except ValueError:
                 return (None,"","Could not enable")
         if args:
