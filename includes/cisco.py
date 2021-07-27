@@ -1,7 +1,7 @@
+from paramiko import SSHClient, AutoAddPolicy, ssh_exception
 import time
 import re
 import logging
-from netmiko import ConnectHandler
 
 from plugins.remote.includes import remote
 
@@ -13,48 +13,117 @@ class cisco(remote.remote):
         self.timeout = timeout
         self.enablePassword = enablePassword
         self.error = "" 
-        self.type = "cisco_ios"
+        self.type = "cisco"
         self.client = self.connect(username,password,port)
 
     def connect(self,username,password,port):
         try: 
-            client = ConnectHandler(host=self.host, device_type=self.type, username=username, password=password, secret=self.enablePassword, port=port, system_host_keys=True, timeout=self.timeout)
-            detectedDevice = client.find_prompt().strip()[:-1]
-            if detectedDevice != self.deviceHostname:
+            client = SSHClient()
+            client.load_system_host_keys()
+            client.set_missing_host_key_policy(AutoAddPolicy())   
+            try:
+                client.connect(self.host, username=username, password=password, port=port, look_for_keys=True, timeout=self.timeout,banner_timeout=200)
+            except ssh_exception.SSHException:
+                time.sleep(2)
+                client.connect(self.host, username=username, password=password, port=port, look_for_keys=True, timeout=self.timeout,banner_timeout=200)
+            self.channel = client.invoke_shell()
+            if not self.recv():
+                self.command("")
+                startTime = time.time()
+                detectedDevice = ""
+                while ( time.time() - startTime < 5 ):
+                    if self.channel.recv_ready():
+                        detectedDevice = self.channel.recv(len(self.deviceHostname)+2).decode().strip()
                 self.error = f"Device detected name does not match the device name provided. Hostname found = {detectedDevice}"
-                client.disconnect()
+                client.close()
                 return None
             return client
         except Exception as e:
-            self.error = e
-            return None
+           self.error = e
+           return None
+    
+    def enable(self,password):
+        self.channel.send("enable\n")
+        if self.awaitStringRecv("Password:"):
+            self.channel.send("{0}\n".format(password))
+            if self.recv():
+                return True
+        return False
     
     def disconnect(self):
         if self.client:
-            self.client.disconnect()
+            self.client.close()
             self.client = None
+
+    def awaitStringRecv(self,awaitString,timeout=5):
+        startTime = time.time()
+        recvBuffer = ""
+        result = False
+        while ( time.time() - startTime < timeout ):
+            if self.channel.recv_ready():
+                recvBuffer += self.channel.recv(1024).decode().strip()
+                if recvBuffer.split('\n')[-1] == "--More--":
+                    self.channel.send(" ")
+                    recvBuffer = recvBuffer[:-8]
+                elif recvBuffer.split('\n')[-1].lower().endswith(awaitString.lower()):
+                    result = True
+                    break
+            time.sleep(0.1)
+        if result:
+            return recvBuffer
+        return False
+
+    def recv(self,timeout=5):
+        startTime = time.time()
+        deviceHostname = self.deviceHostname
+        if len(deviceHostname) >= 20:
+            deviceHostname = deviceHostname[:20]
+        recvBuffer = ""
+        result = False
+        while ( time.time() - startTime < timeout ):
+            if self.channel.recv_ready():
+                recvBuffer += self.channel.recv(1024).decode().strip()
+                if recvBuffer.split('\n')[-1].endswith("--More--"):
+                    self.channel.send(" ")
+                    recvBuffer = recvBuffer[:-8]
+                elif recvBuffer.split('\n')[-1].startswith(deviceHostname):
+                    result = True
+                    break 
+            time.sleep(0.1)
+        if result:
+            return recvBuffer
+        return False
 
     def sendCommand(self,command,attempt=0):
         if attempt > 3:
             return False
-        output = self.client.send_command(command)
-        if output:
-            return output
-        time.sleep(0.1)
+        sentBytes = self.channel.send("{0}{1}".format(command,"\n"))
+        recvBuffer = ""
+        startTime = time.time()
+        while time.time() - startTime < 5:
+            if self.channel.recv_ready():
+                recvBuffer += self.channel.recv(sentBytes-len(recvBuffer.encode())).decode()
+            if command in recvBuffer:
+                return True
+            time.sleep(0.1)
         logging.warning("Command was not received by remote console. command={0}, attempt={1}".format(command),attempt)
         return self.sendCommand(command,attempt+1)
         
     def command(self, command, args=[], elevate=False, runAs=None, timeout=5):
         if command == "enable":
-            try:
-                self.client.enable()
-                return (0, "enabled")
-            except ValueError:
-                return (None,"","Could not enable")
+            return (0, self.enable(self.enablePassword), "")
+        elif command == "copy running-config startup-config":
+            returnedData = ""
+            self.sendCommand(command)
+            if self.awaitStringRecv("Destination filename [startup-config]?"):
+                self.sendCommand("")
+                returnedData = self.recv(timeout)
+            return (0, returnedData, "")
         if args:
             command = command + " " + " ".join(args)
-        returnedData = self.sendCommand(command)
-        if returnedData is False:
+        if self.sendCommand(command):
+            returnedData = self.recv(timeout)
+        else:
             return (None,"","Unable to send command")
         if returnedData == False or "% Invalid input detected at '^'" in returnedData or "% Incomplete command." in returnedData or "Command rejected" in returnedData:
             return (None,"",returnedData)
