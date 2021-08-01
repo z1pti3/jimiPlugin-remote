@@ -77,7 +77,8 @@ class windows(remote.remote):
     def disconnect(self):
         if self.client:
             self.client = None
-            smbclient.reset_connection_cache(connection_cache=self.smbCache)
+            if self.smb:
+                smbclient.reset_connection_cache(connection_cache=self.smbCache)
 
     def reboot(self,timeout):
         startTime = time.time()
