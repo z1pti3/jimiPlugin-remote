@@ -52,6 +52,7 @@ class windows(remote.remote):
         self.password = password
         self.error = ""
         self.type = "windows"
+        self.smb = smb
         self.client = self.connect(host,username,password,smb)
         if self.client and hostname:
             foundHostname = self.command("hostname")
@@ -144,72 +145,78 @@ class windows(remote.remote):
             return self.executeCommand(command,args,elevate,runAs,timeout)
 
     def upload(self,localFile,remotePath):
-        # single file
-        if not os.path.isdir(localFile):
-            try:
-                with open(localFile, mode="rb") as f:
-                    with smbclient.open_file("\\{0}\{1}".format(self.host,remotePath), mode="wb", connection_cache=self.smbCache) as remoteFile:
-                        while True:
-                            part = f.read(4096)
-                            if not part:
-                                break
-                            remoteFile.write(part)
-            except Exception as e:
-                self.error = str(e)
-                return False
-            return True
-        # Directory
-        else:
-            try:
-                smbclient.mkdir("\\{0}\{1}".format(self.host,remotePath), connection_cache=self.smbCache)
-            except OSError as e:
-                if e.errno != errno.EEXIST:
+        if self.smb:
+            # single file
+            if not os.path.isdir(localFile):
+                try:
+                    with open(localFile, mode="rb") as f:
+                        with smbclient.open_file("\\{0}\{1}".format(self.host,remotePath), mode="wb", connection_cache=self.smbCache) as remoteFile:
+                            while True:
+                                part = f.read(4096)
+                                if not part:
+                                    break
+                                remoteFile.write(part)
+                except Exception as e:
+                    self.error = str(e)
                     return False
-            for root, dirs, files in os.walk(localFile):
-                for dir in dirs:
-                    fullPath = os.path.join(root,dir)
-                    fullPath=fullPath.replace("/","\\")
-                    try:
-                        smbclient.mkdir("\\{0}\{1}\{2}".format(self.host,remotePath,fullPath[len(localFile)+1:]), connection_cache=self.smbCache)
-                    except OSError as e:
-                        if e.errno != errno.EEXIST:
-                            return False
-                for _file in files:
-                    try:
-                        fullPath = os.path.join(root,_file)
-                        with open(fullPath, mode="rb")as f:
-                            fullPath=fullPath.replace("/","\\")
-                            with smbclient.open_file("\\{0}\{1}\{2}".format(self.host,remotePath,fullPath[len(localFile)+1:]), mode="wb", connection_cache=self.smbCache) as remoteFile:
-                                while True:
-                                    part = f.read(4096)
-                                    if not part:
-                                        break
-                                    remoteFile.write(part)
-                    except Exception as e:
-                        self.error = str(e)
+                return True
+            # Directory
+            else:
+                try:
+                    smbclient.mkdir("\\{0}\{1}".format(self.host,remotePath), connection_cache=self.smbCache)
+                except OSError as e:
+                    if e.errno != errno.EEXIST:
                         return False
-            return True
-        return False
+                for root, dirs, files in os.walk(localFile):
+                    for dir in dirs:
+                        fullPath = os.path.join(root,dir)
+                        fullPath=fullPath.replace("/","\\")
+                        try:
+                            smbclient.mkdir("\\{0}\{1}\{2}".format(self.host,remotePath,fullPath[len(localFile)+1:]), connection_cache=self.smbCache)
+                        except OSError as e:
+                            if e.errno != errno.EEXIST:
+                                return False
+                    for _file in files:
+                        try:
+                            fullPath = os.path.join(root,_file)
+                            with open(fullPath, mode="rb")as f:
+                                fullPath=fullPath.replace("/","\\")
+                                with smbclient.open_file("\\{0}\{1}\{2}".format(self.host,remotePath,fullPath[len(localFile)+1:]), mode="wb", connection_cache=self.smbCache) as remoteFile:
+                                    while True:
+                                        part = f.read(4096)
+                                        if not part:
+                                            break
+                                        remoteFile.write(part)
+                        except Exception as e:
+                            self.error = str(e)
+                            return False
+                return True
+            return False
+        else:
+            self.error = "SMB not enabled."
 
     def download(self,remoteFile,localPath,createMissingFolders):
-        try:
-            if createMissingFolders:
-                splitChar = "\\"
-                if splitChar not in localPath:
-                    splitChar = "/"
-                if not os.path.isdir(localPath.rsplit(splitChar,1)[0]):
-                    os.makedirs(localPath.rsplit(splitChar,1)[0])
-            with open(localPath, mode="wb") as f:
-                with smbclient.open_file("\\{0}\{1}".format(self.host,remoteFile), mode="rb", connection_cache=self.smbCache) as remoteFile:
-                    while True:
-                        part = remoteFile.read(4096)
-                        if not part:
-                            break
-                        f.write(part)
-            return True
-        except Exception as e:
-            self.error = str(e)
-        return False
+        if self.smb:
+            try:
+                if createMissingFolders:
+                    splitChar = "\\"
+                    if splitChar not in localPath:
+                        splitChar = "/"
+                    if not os.path.isdir(localPath.rsplit(splitChar,1)[0]):
+                        os.makedirs(localPath.rsplit(splitChar,1)[0])
+                with open(localPath, mode="wb") as f:
+                    with smbclient.open_file("\\{0}\{1}".format(self.host,remoteFile), mode="rb", connection_cache=self.smbCache) as remoteFile:
+                        while True:
+                            part = remoteFile.read(4096)
+                            if not part:
+                                break
+                            f.write(part)
+                return True
+            except Exception as e:
+                self.error = str(e)
+            return False
+        else:
+            self.error = "SMB not enabled."
 
 powershellRunAsLoggedInUser = """
 $user = WMIC COMPUTERSYSTEM GET USERNAME | Select-String \"\\\\\"; $username = $user.line.split(\"\\\")[1]; $user = $user.line.trim(); $usersid = (New-Object -ComObject Microsoft.DiskQuota).TranslateLogonNameToSID((Get-WmiObject -Class Win32_ComputerSystem).Username) ; $userprofile = gwmi win32_userprofile | select localpath, sid |  Where-Object {$_.sid -eq $usersid}; $userprofilepath = $userprofile.localpath ;$random = get-random ; schtasks /create /st 23:59 /ru $user /f /tn \"$random\" /sc once /tr \"cmd /c <CMD> >> $userprofilepath\\appdata\\local\\temp\\$random.txt 2>&1  & echo $random >> $userprofilepath\\appdata\\local\\temp\\$random.txt\"; schtasks /run /tn \"$random\" | Out-Null; $a = 0; $taskresultdata = ((schtasks.exe /query /tn \"$random\" /v /fo CSV | ConvertFrom-Csv | Select-Object) 2> $null); while (($taskresultdata.\"Last Run Time\" -eq \"N/A\" -or $taskresultdata.\"Last Run Time\" -eq $null -or $taskresultdata.\"Last Run Time\" -eq \"30/11/1999 00:00:00\" -or $taskresultdata.\"Status\" -ne \"Ready\") -and ($a -lt 120)){Start-Sleep 1; $a = $a + 1; $taskresultdata = ((schtasks.exe /query /tn \"$random\" /v /fo CSV | ConvertFrom-Csv | Select-Object) 2> $null)};write-host \"Out of schtasks run check!\";$filetocheck = $userprofilepath+\"\\appdata\\local\\temp\\\"+$random+\".txt\"; $fileExists = (Test-Path $fileToCheck -PathType leaf); while (($fileExists -eq $False) -and ($a -lt 60)){Start-Sleep 1; $a = $a + 1; write-host $a; $fileExists = (Test-Path $fileToCheck -PathType leaf)};$result = (Get-Content $userprofilepath\\appdata\\local\\temp\\$random.txt | %{$_ -match \"$random\"});while (($result[$result.count -1] -eq $False) -and ($a -lt 60)){Start-Sleep 1; write-host $a; $result = (Get-Content $userprofilepath\\appdata\\local\\temp\\$random.txt | %{$_ -match \"$random\"});write-host $result[$result.count -1];$a = $a + 1};write-host \"Out of EOF check!\"; type $userprofilepath\\appdata\\local\\temp\\$random.txt;start-sleep 1;rm $userprofilepath\\appdata\\local\\temp\\$random.txt;schtasks /delete /f /tn $random
