@@ -2,6 +2,9 @@ from core import settings, helpers, auth
 from core.models import action
 from plugins.remote.includes import linux, windows, fortigate, cisco
 import re
+import time
+import uuid
+
 import jimi
 
 class _remoteConnectLinux(action._action):
@@ -47,12 +50,17 @@ class _remoteConnectLinux(action._action):
                 client = linux.linux(host,user,password=password,port=self.port,timeout=self.timeout,enable_scp=self.enable_scp)
 
         if client.client != None:
-            data["eventData"]["remote"]={}
-            data["eventData"]["remote"]["client"] = client
+            connection_id = str(uuid.uuid4())
+            if "remote" not in data["eventData"]:
+                data["eventData"]["remote"] = {}
+            data["eventData"]["remote"][connection_id] = { "client" : client }
+            data["flowData"]["var"]["remote_connection_id"] = connection_id
 
             if self.isPortForward:
-                data["eventData"]["remote"]["port"] = client.tunnelPort
-            return {"result" : True, "rc" : 0, "msg" : "Connection successful"}
+                data["eventData"]["remote"][connection_id]["port"] = client.tunnelPort
+                return {"result" : True, "rc" : 0, "msg" : "Connection successful", "connection_id" : connection_id, "local_port" : client.tunnelPort}
+            else:
+                return {"result" : True, "rc" : 0, "msg" : "Connection successful", "connection_id" : connection_id}
         else:
             return {"result" : False, "rc" : 403, "msg" : "Connection failed - {0}".format(client.error)}
 
@@ -78,8 +86,13 @@ class _remoteConnectWindows(action._action):
 
         client = windows.windows(host,user,password,smb=self.enable_smb)
         if client.client != None:
-            data["eventData"]["remote"]={"client" : client}
-            return {"result" : True, "rc" : 0, "msg" : "Connection successful"}
+            connection_id = str(uuid.uuid4())
+            if "remote" not in data["eventData"]:
+                data["eventData"]["remote"] = {}
+            data["eventData"]["remote"][connection_id] = { "client" : client }
+            data["flowData"]["var"]["remote_connection_id"] = connection_id
+
+            return {"result" : True, "rc" : 0, "msg" : "Connection successful",  "connection_id" : connection_id}
         else:
             return {"result" : False, "rc" : 403, "msg" : "Connection failed - {0}".format(client.error)}
 
@@ -105,8 +118,13 @@ class _remoteConnectWindowsPSExec(action._action):
 
         client = windows.windowsPSExec(host,user,password,self.use_encryption)
         if client.client != None:
-            data["eventData"]["remote"]={"client" : client}
-            return {"result" : True, "rc" : 0, "msg" : "Connection successful"}
+            connection_id = str(uuid.uuid4())
+            if "remote" not in data["eventData"]:
+                data["eventData"]["remote"] = {}
+            data["eventData"]["remote"][connection_id] = { "client" : client }
+            data["flowData"]["var"]["remote_connection_id"] = connection_id
+
+            return {"result" : True, "rc" : 0, "msg" : "Connection successful", "connection_id" : connection_id}
         else:
             return {"result" : False, "rc" : 403, "msg" : "Connection failed - {0}".format(client.error)}
 
@@ -141,8 +159,13 @@ class _remoteConnectFortigate(action._action):
         client = fortigate.fortigate(host,deviceHostname,user,password=password,port=port,timeout=self.timeout)
 
         if client.client != None:
-            data["eventData"]["remote"]={"client" : client}
-            return {"result" : True, "rc" : 0, "msg" : "Connection successful"}
+            connection_id = str(uuid.uuid4())
+            if "remote" not in data["eventData"]:
+                data["eventData"]["remote"] = {}
+            data["eventData"]["remote"][connection_id] = { "client" : client }
+            data["flowData"]["var"]["remote_connection_id"] = connection_id
+
+            return {"result" : True, "rc" : 0, "msg" : "Connection successful", "connection_id" : connection_id}
         else:
             return {"result" : False, "rc" : 403, "msg" : "Connection failed - {0}".format(client.error)}
 
@@ -184,8 +207,13 @@ class _remoteConnectCisco(action._action):
         client = cisco.cisco(host,deviceHostname,ssh_username,ssh_password,enable_password,port,self.timeout)
 
         if client.client != None:
-            data["eventData"]["remote"]={"client" : client}
-            return {"result" : True, "rc" : 0, "msg" : "Connection successful"}
+            connection_id = str(uuid.uuid4())
+            if "remote" not in data["eventData"]:
+                data["eventData"]["remote"] = {}
+            data["eventData"]["remote"][connection_id] = { "client" : client }
+            data["flowData"]["var"]["remote_connection_id"] = connection_id
+
+            return {"result" : True, "rc" : 0, "msg" : "Connection successful", "connection_id" : connection_id}
         else:
             return {"result" : False, "rc" : 403, "msg" : "Connection failed - {0}".format(client.error)}
 
@@ -199,16 +227,23 @@ class _remoteConnectCisco(action._action):
         return super(_remoteConnectCisco, self).setAttribute(attr,value,sessionData=sessionData)
 
 class _remoteDisconnect(action._action):
+    connection_id = str()
+
     def doAction(self,data):
+        connection_id = helpers.evalString(self.connection_id,{"data" : data["flowData"], "eventData" : data["eventData"]})
+        if connection_id == "":
+            connection_id = data["flowData"]["var"]["remote_connection_id"]
         try:
-            client = data["eventData"]["remote"]["client"]
+            client = data["eventData"]["remote"][connection_id]["client"]
         except KeyError:
-            client = None
+            return {"result" : False, "rc" : 255, "msg" : "Unable to load remote connection - connection_id='{0}'".format(connection_id)}
         if client:
             client.disconnect()
+            del data["eventData"]["remote"][connection_id]
         return {"result" : True, "rc" : 0, "msg" : "Connection disconnected"}
 
 class _remoteCommand(action._action):
+    connection_id = str()
     command = str()
     arguments = list()
     elevate = bool()
@@ -216,12 +251,16 @@ class _remoteCommand(action._action):
     timeout = 60
 
     def doAction(self,data):
+        connection_id = helpers.evalString(self.connection_id,{"data" : data["flowData"], "eventData" : data["eventData"]})
+        if connection_id == "":
+            connection_id = data["flowData"]["var"]["remote_connection_id"]
+
         command = helpers.evalString(self.command,{"data" : data["flowData"]})
         arguments = helpers.evalList(self.arguments,{"data" : data["flowData"]})
         try:
-            client = data["eventData"]["remote"]["client"]
+            client = data["eventData"]["remote"][connection_id]["client"]
         except KeyError:
-            client = None
+            return {"result" : False, "rc" : 255, "msg" : "Unable to load remote connection - connection_id='{0}'".format(connection_id)}
         if client:
             exitCode, output, errors = client.command(command,args=arguments,elevate=self.elevate,runAs=self.runAs,timeout=self.timeout)
             
@@ -233,6 +272,7 @@ class _remoteCommand(action._action):
             return {"result" : False, "rc" : 403, "msg" : "No connection found"}
 
 class _remoteMultiCommand(action._action):
+    connection_id = str()
     commands = str()
     elevate = bool()
     runAs = str()
@@ -240,12 +280,16 @@ class _remoteMultiCommand(action._action):
     exitOnFailure = True
 
     def doAction(self,data):
+        connection_id = helpers.evalString(self.connection_id,{"data" : data["flowData"], "eventData" : data["eventData"]})
+        if connection_id == "":
+            connection_id = data["flowData"]["var"]["remote_connection_id"]
+
         commandResults = []
         commands = helpers.evalString(self.commands,{"data" : data["flowData"]})
         try:
-            client = data["eventData"]["remote"]["client"]
+            client = data["eventData"]["remote"][connection_id]["client"]
         except KeyError:
-            client = None
+            return {"result" : False, "rc" : 255, "msg" : "Unable to load remote connection - connection_id='{0}'".format(connection_id)}
         if client:
             if "\n" in commands:
                 commands = commands.split("\n")
@@ -272,13 +316,18 @@ class _remoteMultiCommand(action._action):
             return {"result" : False, "rc" : 403, "msg" : "No connection found"}
 
 class _remoteReboot(action._action):
+    connection_id = str()
     timeout = int()
 
     def doAction(self,data):
+        connection_id = helpers.evalString(self.connection_id,{"data" : data["flowData"], "eventData" : data["eventData"]})
+        if connection_id == "":
+            connection_id = data["flowData"]["var"]["remote_connection_id"]
+
         try:
-            client = data["eventData"]["remote"]["client"]
+            client = data["eventData"]["remote"][connection_id]["client"]
         except KeyError:
-            client = None
+            return {"result" : False, "rc" : 255, "msg" : "Unable to load remote connection - connection_id='{0}'".format(connection_id)}
         if client:
             timeout = 60
             if self.timeout > 0:
@@ -292,12 +341,17 @@ class _remoteReboot(action._action):
             return {"result" : False, "rc" : 403, "msg" : "No connection found"}
 
 class _remoteDownload(action._action):
+    connection_id = str()
     remoteFile = str()
     localFile = str()
     createMissingFolders = bool()
     useStorage = bool()
 
     def doAction(self,data):
+        connection_id = helpers.evalString(self.connection_id,{"data" : data["flowData"], "eventData" : data["eventData"]})
+        if connection_id == "":
+            connection_id = data["flowData"]["var"]["remote_connection_id"]
+
         remoteFile = helpers.evalString(self.remoteFile,{"data" : data["flowData"]})
         localFile = helpers.evalString(self.localFile,{"data" : data["flowData"]})
 
@@ -309,10 +363,10 @@ class _remoteDownload(action._action):
                 localFileClass.new(self.acl,"remoteDownload",localFile,True)
             localFile = localFileClass.getFullFilePath()
 
-        client = None
-        if "remote" in data["eventData"]:
-            if "client" in data["eventData"]["remote"]:
-                client = data["eventData"]["remote"]["client"]
+        try:
+            client = data["eventData"]["remote"][connection_id]["client"]
+        except KeyError:
+            return {"result" : False, "rc" : 255, "msg" : "Unable to load remote connection - connection_id='{0}'".format(connection_id)}
         if client:
             if client.download(remoteFile,localFile,self.createMissingFolders):
                 if self.useStorage:
@@ -323,11 +377,16 @@ class _remoteDownload(action._action):
         return {"result" : False, "rc" : 403, "msg" : "File transfer failed - {0}".format(client.error)}
 
 class _remoteUpload(action._action):
+    connection_id = str()
     remoteFile = str()
     localFile = str()
     useStorage = bool()
 
     def doAction(self,data):
+        connection_id = helpers.evalString(self.connection_id,{"data" : data["flowData"], "eventData" : data["eventData"]})
+        if connection_id == "":
+            connection_id = data["flowData"]["var"]["remote_connection_id"]
+
         remoteFile = helpers.evalString(self.remoteFile,{"data" : data["flowData"]})
         localFile = helpers.evalString(self.localFile,{"data" : data["flowData"]})
 
@@ -341,9 +400,9 @@ class _remoteUpload(action._action):
                 return {"result" : False, "rc" : 404, "msg" : "Local file not found within storage store. storageID={0}".format(localFile)}
 
         try:
-            client = data["eventData"]["remote"]["client"]
+            client = data["eventData"]["remote"][connection_id]["client"]
         except KeyError:
-            client = None
+            return {"result" : False, "rc" : 255, "msg" : "Unable to load remote connection - connection_id='{0}'".format(connection_id)}
         if client:
             if client.upload(localFile,remoteFile):
                 return {"result" : True, "rc" : 0, "msg" : "File transfered successful"}

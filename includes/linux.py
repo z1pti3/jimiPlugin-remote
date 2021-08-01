@@ -18,7 +18,8 @@ class linux(remote.remote):
         self.port = int(port)
         self.remote_port = int(remote_port)
         self.port_forward = port_forward
-        self.type = "linux"  
+        self.type = "linux"
+        self.client = None
 
         if not self.port_forward:
             if self.keyFile != '':
