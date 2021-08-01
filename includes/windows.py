@@ -66,7 +66,8 @@ class windows(remote.remote):
         client = Protocol(endpoint="http://{0}:5985/wsman".format(host),transport="ntlm",username=username,password=password,read_timeout_sec=30)
         if smb:
             try:
-                smbclient.register_session(self.host, username=self.username, password=self.password, connection_timeout=30)
+                self.smbCache = {}
+                smbclient.register_session(self.host, username=self.username, password=self.password, connection_timeout=30, connection_cache=self.smbCache)
             except Exception as e:
                 self.error = str(e)
                 return None
@@ -75,7 +76,7 @@ class windows(remote.remote):
     def disconnect(self):
         if self.client:
             self.client = None
-            #smbclient.delete_session(self.host)
+            smbclient.reset_connection_cache(connection_cache=self.smbCache)
 
     def reboot(self,timeout):
         startTime = time.time()
@@ -147,7 +148,7 @@ class windows(remote.remote):
         if not os.path.isdir(localFile):
             try:
                 with open(localFile, mode="rb") as f:
-                    with smbclient.open_file("\\{0}\{1}".format(self.host,remotePath), mode="wb") as remoteFile:
+                    with smbclient.open_file("\\{0}\{1}".format(self.host,remotePath), mode="wb", connection_cache=self.smbCache) as remoteFile:
                         while True:
                             part = f.read(4096)
                             if not part:
@@ -160,7 +161,7 @@ class windows(remote.remote):
         # Directory
         else:
             try:
-                smbclient.mkdir("\\{0}\{1}".format(self.host,remotePath))
+                smbclient.mkdir("\\{0}\{1}".format(self.host,remotePath), connection_cache=self.smbCache)
             except OSError as e:
                 if e.errno != errno.EEXIST:
                     return False
@@ -169,7 +170,7 @@ class windows(remote.remote):
                     fullPath = os.path.join(root,dir)
                     fullPath=fullPath.replace("/","\\")
                     try:
-                        smbclient.mkdir("\\{0}\{1}\{2}".format(self.host,remotePath,fullPath[len(localFile)+1:]))
+                        smbclient.mkdir("\\{0}\{1}\{2}".format(self.host,remotePath,fullPath[len(localFile)+1:]), connection_cache=self.smbCache)
                     except OSError as e:
                         if e.errno != errno.EEXIST:
                             return False
@@ -178,7 +179,7 @@ class windows(remote.remote):
                         fullPath = os.path.join(root,_file)
                         with open(fullPath, mode="rb")as f:
                             fullPath=fullPath.replace("/","\\")
-                            with smbclient.open_file("\\{0}\{1}\{2}".format(self.host,remotePath,fullPath[len(localFile)+1:]), mode="wb") as remoteFile:
+                            with smbclient.open_file("\\{0}\{1}\{2}".format(self.host,remotePath,fullPath[len(localFile)+1:]), mode="wb", connection_cache=self.smbCache) as remoteFile:
                                 while True:
                                     part = f.read(4096)
                                     if not part:
@@ -199,7 +200,7 @@ class windows(remote.remote):
                 if not os.path.isdir(localPath.rsplit(splitChar,1)[0]):
                     os.makedirs(localPath.rsplit(splitChar,1)[0])
             with open(localPath, mode="wb") as f:
-                with smbclient.open_file("\\{0}\{1}".format(self.host,remoteFile), mode="rb") as remoteFile:
+                with smbclient.open_file("\\{0}\{1}".format(self.host,remoteFile), mode="rb", connection_cache=self.smbCache) as remoteFile:
                     while True:
                         part = remoteFile.read(4096)
                         if not part:
