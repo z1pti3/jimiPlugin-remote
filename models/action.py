@@ -75,6 +75,8 @@ class _remoteConnectWindows(action._action):
     user = str()
     password = str()
     enable_smb = True
+    check_hostname = False
+    hostname = str()
 
     def doAction(self,data):
         host = helpers.evalString(self.host,{"data" : data["flowData"]})
@@ -84,7 +86,12 @@ class _remoteConnectWindows(action._action):
         elif "%%" in self.password:
             password = helpers.evalString(self.password,{"data" : data["flowData"]})
 
-        client = windows.windows(host,user,password,smb=self.enable_smb)
+        if self.check_hostname:
+            hostname = helpers.evalString(self.hostname,{"data" : data["flowData"]})
+        else:
+            hostname = ""
+
+        client = windows.windows(host,user,password,smb=self.enable_smb,hostname=hostname)
         if client.client != None:
             connection_id = str(uuid.uuid4())
             if "remote" not in data["eventData"]:

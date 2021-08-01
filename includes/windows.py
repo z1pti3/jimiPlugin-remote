@@ -46,13 +46,18 @@ class windowsPSExec(remote.remote):
 
 class windows(remote.remote):
 
-    def __init__(self, host, username="administrator", password="", smb=True):
+    def __init__(self, host, username="administrator", password="", smb=True, hostname=""):
         self.host = host
         self.username = username
         self.password = password
         self.error = ""
         self.type = "windows"
         self.client = self.connect(host,username,password,smb)
+        if self.client and hostname:
+            foundHostname = self.command("hostname")
+            if foundHostname.lower() != hostname.lower():
+                self.client = None
+                self.error = "Hostname {0} does not match connected host {1}".format(hostname,foundHostname)
 
     def __del__(self):
         self.disconnect()

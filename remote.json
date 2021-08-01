@@ -1,7 +1,7 @@
 {
    "name": "remote",
    "author": "z1p, b1scuit-thi3f, TerrifiedBug, TheCypherGoat",
-   "version": 1.46,
+   "version": 1.47,
    "categories": ["remote","automation"],
    "description": "jimi IT automation framework to carry out remote tasks on workstations, servers, firewalls, swtiches using winRM, SMB, SSH, SCP",
    "icon": null,
@@ -225,6 +225,26 @@
                "type": "checkbox",
                "label": "enable_smb",
                "description": "Enabled SMB connection as well as winRM. Default is True."
+            },
+            {
+               "schema_item": "check_hostname",
+               "schema_value": "check_hostname",
+               "type": "group-checkbox",
+               "label": "check_hostname",
+               "description": "When enabled and hostname is provided the hostname of the system connected to will be checked and compared to the hostname value.",
+               "required" : false, 
+               "jimi_syntax" : false,
+               "group" : 1
+            },
+            {
+               "schema_item": "hostname",
+               "schema_value": "hostname",
+               "type": "input",
+               "label": "hostname",
+               "description": "Hostname to compare to the system hostname found.",
+               "required" : false, 
+               "jimi_syntax" : true,
+               "group" : 1
             }
          ],
          "data_out": {
