@@ -73,7 +73,7 @@ class cisco(remote.remote):
             return recvBuffer
         return False
 
-    def recv(self,timeout=5):
+    def recv(self,timeout=5,attempt=0):
         startTime = time.time()
         deviceHostname = self.deviceHostname
         if len(deviceHostname) >= 20:
@@ -92,6 +92,10 @@ class cisco(remote.remote):
             time.sleep(0.1)
         if result:
             return recvBuffer
+        elif attempt < 3:
+            attempt += 1
+            self.channel.send(" ")
+            return self.recv(timeout,attempt)
         return False
 
     def sendCommand(self,command,attempt=0):
