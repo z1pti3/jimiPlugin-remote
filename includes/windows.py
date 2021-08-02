@@ -55,7 +55,7 @@ class windows(remote.remote):
         self.smb = smb
         self.client = self.connect(host,username,password,smb)
         if self.client and hostname:
-            foundHostname = self.command("hostname")
+            rc, foundHostname, errors = self.command("hostname")
             if foundHostname.lower() != hostname.lower():
                 self.client = None
                 self.error = "Hostname {0} does not match connected host {1}".format(hostname,foundHostname)
