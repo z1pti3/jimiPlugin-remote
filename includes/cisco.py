@@ -95,7 +95,10 @@ class cisco(remote.remote):
         elif attempt < 3:
             attempt += 1
             self.channel.send(" ")
-            return self.recv(timeout,attempt)
+            recvData = self.recv(timeout,attempt)
+            if recvData:
+                recvBuffer += recvData
+                return recvBuffer
         return False
 
     def sendCommand(self,command,attempt=0):
