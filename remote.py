@@ -1,7 +1,7 @@
 from core import plugin, model
 
 class _remote(plugin._plugin):
-    version = 1.47
+    version = 1.48
 
     def install(self):
         # Register models

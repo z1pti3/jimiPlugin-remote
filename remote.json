@@ -1,7 +1,7 @@
 {
    "name": "remote",
    "author": "z1p, b1scuit-thi3f, TerrifiedBug, TheCypherGoat",
-   "version": 1.47,
+   "version": 1.48,
    "categories": ["remote","automation"],
    "description": "jimi IT automation framework to carry out remote tasks on workstations, servers, firewalls, swtiches using winRM, SMB, SSH, SCP",
    "icon": null,
@@ -668,7 +668,7 @@
             {
                "schema_item": "commands",
                "schema_value": "commands",
-               "type": "script",
+               "type": "multiline",
                "label": "commands",
                "description": ""
             },
