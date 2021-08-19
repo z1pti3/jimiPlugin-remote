@@ -9,7 +9,7 @@ class fortigate(remote.remote):
 
     def __init__(self, host, deviceHostname, username="admin", password='', port=22, timeout=5):
         self.host = host
-        self.deviceHostname = deviceHostname
+        self.deviceHostname = deviceHostname.lower()
         self.port = port
         self.timeout = timeout
         self.error = ""  
@@ -24,7 +24,7 @@ class fortigate(remote.remote):
             client.set_missing_host_key_policy(AutoAddPolicy())   
             client.connect(host, username=username, password=password, port=self.port, look_for_keys=True, timeout=self.timeout)
             self.channel = client.invoke_shell()
-            detectedDevice = self.channel.recv(len(self.deviceHostname)+2).decode().strip()
+            detectedDevice = self.channel.recv(len(self.deviceHostname)+2).decode().strip().lower()
             if detectedDevice != "{0} #".format(self.deviceHostname) and detectedDevice != "{0} $".format(self.deviceHostname):
                 self.error = f"Device detected name does not match the device name provided. Hostname found = {detectedDevice}"
                 client.close()
@@ -48,7 +48,7 @@ class fortigate(remote.remote):
                 if recvBuffer.split('\n')[-1] == "--More--":
                     self.channel.send(" ")
                     recvBuffer = recvBuffer[:-8]
-                elif re.match(r"^{0} ((#|\$)|\([a-z]+\) (#|\$))$".format(self.deviceHostname) ,recvBuffer.split('\n')[-1]):
+                elif re.match(r"^{0} ((#|\$)|\([a-z]+\) (#|\$))$".format(self.deviceHostname) ,recvBuffer.split('\n')[-1].lower()):
                     break 
             time.sleep(0.1)
         return recvBuffer
@@ -64,7 +64,7 @@ class fortigate(remote.remote):
             if command in recvBuffer:
                 return True
             time.sleep(0.1)
-        logging.warning("Command was not received by remote console. command={0}, attempt={1}".format(command),attempt)
+        logging.warning("Command was not received by remote console. command={0}, attempt={1}".format(command,attempt))
         return self.sendCommand(command,attempt+1)
         
     def command(self, command, args=[], elevate=False, runAs=None, timeout=5):
