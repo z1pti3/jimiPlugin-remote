@@ -29,11 +29,13 @@ class cisco(remote.remote):
             self.channel = client.invoke_shell()
             if not self.recv():
                 self.command("")
+                time.sleep(0.5)
                 startTime = time.time()
                 detectedDevice = ""
                 while ( time.time() - startTime < 5 ):
                     if self.channel.recv_ready():
-                        detectedDevice = self.channel.recv(len(self.deviceHostname)+2).decode().strip()
+                        detectedDevice = self.channel.recv(2048).decode().strip()
+                    time.sleep(0.1)
                 self.error = f"Device detected name does not match the device name provided. Hostname found = {detectedDevice}"
                 client.close()
                 return None
@@ -86,7 +88,7 @@ class cisco(remote.remote):
                 if recvBuffer.split('\n')[-1].endswith("--More--"):
                     self.channel.send(" ")
                     recvBuffer = recvBuffer[:-8]
-                elif recvBuffer.split('\n')[-1].startswith(deviceHostname):
+                elif recvBuffer.split('\n')[-1].lower().startswith(deviceHostname.lower()):
                     result = True
                     break 
             time.sleep(0.1)
@@ -118,7 +120,11 @@ class cisco(remote.remote):
         
     def command(self, command, args=[], elevate=False, runAs=None, timeout=5):
         if command == "enable":
-            return (0, self.enable(self.enablePassword), "")
+            enableResult = self.enable(self.enablePassword)
+            if enableResult:
+                return (0, enableResult, "")
+            else:
+                return (None, enableResult, "")
         elif command == "copy running-config startup-config":
             returnedData = ""
             self.sendCommand(command)
