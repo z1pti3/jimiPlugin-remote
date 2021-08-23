@@ -647,6 +647,13 @@
                      "description": "Failure other."
                   }
                }
+            },
+            "command" : {
+               "description": "Command that was executed.",
+               "type": "text",
+               "always_present": false,
+               "values": {
+               }
             }
          }
       },

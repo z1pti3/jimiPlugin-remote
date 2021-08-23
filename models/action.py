@@ -272,9 +272,9 @@ class _remoteCommand(action._action):
             exitCode, output, errors = client.command(command,args=arguments,elevate=self.elevate,runAs=self.runAs,timeout=self.timeout)
             
             if exitCode != None:
-                return {"result" : True, "rc" : exitCode, "msg" : "Command succesfull", "data" : output, "errors" : errors}
+                return {"result" : True, "rc" : exitCode, "msg" : "Command successful", "data" : output, "errors" : errors, "command" : command}
             else:
-                return {"result" : False, "rc" : 255, "msg" : client.error, "data" : output, "errors" : errors}
+                return {"result" : False, "rc" : 255, "msg" : client.error, "data" : output, "errors" : errors, "command" : command}
         else:
             return {"result" : False, "rc" : 403, "msg" : "No connection found"}
 
