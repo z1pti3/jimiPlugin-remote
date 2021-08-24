@@ -54,24 +54,17 @@ class fortigate(remote.remote):
         return recvBuffer
 
     def sendCommand(self,command,attempt=0):
-        if attempt > 3:
-            return False
         sentBytes = self.channel.send("{0}{1}".format(command,"\n"))
-        recvBuffer = ""
-        startTime = time.time()
-        while time.time() - startTime < 5:
-            recvBuffer += self.channel.recv(sentBytes-len(recvBuffer.encode())).decode()
-            if command in recvBuffer:
-                return True
-            time.sleep(0.1)
-        logging.warning("Command was not received by remote console. command={0}, attempt={1}".format(command,attempt))
-        return self.sendCommand(command,attempt+1)
+        time.sleep(0.5)
+         return True
         
     def command(self, command, args=[], elevate=False, runAs=None, timeout=5):
         if args:
             command = command + " " + " ".join(args)
         if self.sendCommand(command):
             returnedData = self.recv(timeout)
+            if command not in returnedData:
+                return (None,"","Unable to send command")
         else:
             return (None,"","Unable to send command")
         return (0, returnedData, "")
