@@ -114,7 +114,7 @@ class cisco(remote.remote):
                 recvBuffer += self.channel.recv(sentBytes-len(recvBuffer.encode())).decode()
             if command in recvBuffer:
                 return True
-            time.sleep(0.5)
+            time.sleep(0.1)
         logging.warning("Command was not received by remote console. command={0}, attempt={1}".format(command,attempt))
         sentBytes = self.channel.send("{0}{1}".format("\b"*len(command),"\n"))
         return self.sendCommand(command,attempt+1)
