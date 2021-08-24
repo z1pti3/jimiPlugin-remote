@@ -28,14 +28,13 @@ class cisco(remote.remote):
                 client.connect(self.host, username=username, password=password, port=port, look_for_keys=True, timeout=self.timeout,banner_timeout=200)
             self.channel = client.invoke_shell()
             if not self.recv():
-                self.command("")
-                time.sleep(0.5)
                 startTime = time.time()
                 detectedDevice = ""
                 while ( time.time() - startTime < 5 ):
+                    self.command("")
                     if self.channel.recv_ready():
-                        detectedDevice = self.channel.recv(2048).decode().strip()
-                    time.sleep(0.1)
+                        detectedDevice += self.channel.recv(2048).decode().strip()
+                    time.sleep(0.5)
                 self.error = f"Device detected name does not match the device name provided. Hostname found = {detectedDevice}"
                 client.close()
                 return None
