@@ -28,14 +28,13 @@ class cisco(remote.remote):
                 client.connect(self.host, username=username, password=password, port=port, look_for_keys=True, timeout=self.timeout,banner_timeout=200)
             self.channel = client.invoke_shell()
             if not self.recv():
-                self.command("")
-                time.sleep(0.5)
                 startTime = time.time()
                 detectedDevice = ""
                 while ( time.time() - startTime < 5 ):
+                    self.command("")
                     if self.channel.recv_ready():
-                        detectedDevice = self.channel.recv(2048).decode().strip()
-                    time.sleep(0.1)
+                        detectedDevice += self.channel.recv(2048).decode().strip()
+                    time.sleep(0.5)
                 self.error = f"Device detected name does not match the device name provided. Hostname found = {detectedDevice}"
                 client.close()
                 return None
@@ -104,19 +103,9 @@ class cisco(remote.remote):
         return False
 
     def sendCommand(self,command,attempt=0):
-        if attempt > 3:
-            return False
-        sentBytes = self.channel.send("{0}{1}".format(command,"\n"))
-        recvBuffer = ""
-        startTime = time.time()
-        while time.time() - startTime < 5:
-            if self.channel.recv_ready():
-                recvBuffer += self.channel.recv(sentBytes-len(recvBuffer.encode())).decode()
-            if command in recvBuffer:
-                return True
-            time.sleep(0.1)
-        logging.warning("Command was not received by remote console. command={0}, attempt={1}".format(command),attempt)
-        return self.sendCommand(command,attempt+1)
+        self.channel.send("{0}{1}".format(command,"\n"))
+        time.sleep(0.5)
+        return True
         
     def command(self, command, args=[], elevate=False, runAs=None, timeout=5):
         if command == "enable":
@@ -131,11 +120,15 @@ class cisco(remote.remote):
             if self.awaitStringRecv("Destination filename [startup-config]?"):
                 self.sendCommand("")
                 returnedData = self.recv(timeout)
-            return (0, returnedData, "")
+                return (0, returnedData, "")
+            else:
+                return (None, "", "Unable to save config")
         if args:
             command = command + " " + " ".join(args)
         if self.sendCommand(command):
             returnedData = self.recv(timeout)
+            if command not in returnedData:
+                return (None,"","Unable to send command")
         else:
             return (None,"","Unable to send command")
         if returnedData == False or "% Invalid input detected at '^'" in returnedData or "% Incomplete command." in returnedData or "Command rejected" in returnedData:
