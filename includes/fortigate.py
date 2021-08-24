@@ -56,7 +56,7 @@ class fortigate(remote.remote):
     def sendCommand(self,command,attempt=0):
         sentBytes = self.channel.send("{0}{1}".format(command,"\n"))
         time.sleep(0.5)
-         return True
+        return True
         
     def command(self, command, args=[], elevate=False, runAs=None, timeout=5):
         if args:
@@ -67,6 +67,8 @@ class fortigate(remote.remote):
                 return (None,"","Unable to send command")
         else:
             return (None,"","Unable to send command")
+        if returnedData == False or "command parse error" in returnedData or "Command fail. Return code" in returnedData:
+            return (None,"",returnedData)
         return (0, returnedData, "")
 
     def __del__(self):
