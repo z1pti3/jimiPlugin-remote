@@ -48,8 +48,9 @@ class fortigate(remote.remote):
                 if recvBuffer.split('\n')[-1] == "--More--":
                     self.channel.send(" ")
                     recvBuffer = recvBuffer[:-8]
-                elif re.match(r"^{0} ((#|\$)|\([a-z]+\) (#|\$))$".format(self.deviceHostname) ,recvBuffer.split('\n')[-1].lower()):
+                elif re.match(r"^{0} (#|\$)|\([^\)]+\) (#|\$))$".format(self.deviceHostname) ,recvBuffer.split('\n')[-1].lower()):
                     break 
+            print(recvBuffer)
             time.sleep(0.1)
         return recvBuffer
 
@@ -59,6 +60,7 @@ class fortigate(remote.remote):
         return True
         
     def command(self, command, args=[], elevate=False, runAs=None, timeout=5):
+        print(command,args)
         if args:
             command = command + " " + " ".join(args)
         if self.sendCommand(command):
