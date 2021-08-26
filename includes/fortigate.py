@@ -64,7 +64,7 @@ class fortigate(remote.remote):
         if self.sendCommand(command):
             returnedData = self.recv(timeout)
             if command not in returnedData:
-                return (None,"","Unable to send command")
+                return (None,returnedData,"Unable to send command")
         else:
             return (None,"","Unable to send command")
         if returnedData == False or "command parse error" in returnedData or "Command fail. Return code" in returnedData:
