@@ -1,7 +1,7 @@
 from paramiko import SSHClient, AutoAddPolicy
 import time
 import re
-import logging
+import jimi
 
 from plugins.remote.includes import remote
 
@@ -62,9 +62,9 @@ class fortigate(remote.remote):
         if args:
             command = command + " " + " ".join(args)
         if self.sendCommand(command):
-            returnedData = self.recv(timeout)
+            returnedData = jimi.helpers.replaceBackspaces(self.recv(timeout))
             if command not in returnedData:
-                return (None,"","Unable to send command")
+                return (None,returnedData,"Unable to send command")
         else:
             return (None,"","Unable to send command")
         if returnedData == False or "command parse error" in returnedData or "Command fail. Return code" in returnedData:

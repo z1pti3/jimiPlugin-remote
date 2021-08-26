@@ -1,7 +1,6 @@
 from paramiko import SSHClient, AutoAddPolicy, ssh_exception
 import time
-import re
-import logging
+import jimi
 
 from plugins.remote.includes import remote
 
@@ -126,9 +125,9 @@ class cisco(remote.remote):
         if args:
             command = command + " " + " ".join(args)
         if self.sendCommand(command):
-            returnedData = self.recv(timeout)
+            returnedData = jimi.helpers.replaceBackspaces(self.recv(timeout))
             if command not in returnedData:
-                return (None,"","Unable to send command")
+                return (None,returnedData,"Unable to send command")
         else:
             return (None,"","Unable to send command")
         if returnedData == False or "% Invalid input detected at '^'" in returnedData or "% Incomplete command." in returnedData or "Command rejected" in returnedData:
