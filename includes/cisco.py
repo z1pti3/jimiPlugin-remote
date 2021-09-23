@@ -90,7 +90,7 @@ class cisco(remote.remote):
                 if recvBuffer.split('\n')[-1].endswith("--More--"):
                     self.channel.send(" ")
                     recvBuffer = recvBuffer[:-8]
-                elif recvBuffer.split('\n')[-1].lower().startswith(deviceHostname.lower()):
+                elif recvBuffer.split('\n')[-1].lower().startswith(deviceHostname.lower()) or recvBuffer.split('\r')[-1].lower().startswith(deviceHostname.lower()):
                     result = True
                     break 
             time.sleep(0.1)
