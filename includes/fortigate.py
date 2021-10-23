@@ -53,8 +53,8 @@ class fortigate(remote.remote):
             time.sleep(0.1)
         return recvBuffer
 
-    def sendCommand(self,command,attempt=0):
-        sentBytes = self.channel.send("{0}{1}".format(command,"\n"))
+    def sendCommand(self,command):
+        self.channel.send("{0}{1}".format(command,"\n"))
         time.sleep(0.5)
         return True
         
