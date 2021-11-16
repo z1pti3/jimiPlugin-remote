@@ -100,9 +100,12 @@ class linux(remote.remote):
                 else:
                     stdin, stdout, stderr = self.client.exec_command("{0} {1}".format(command, " ".join(args)).strip(),timeout=timeout)
                 response=[]
+                startTime = time.time()
                 while not stdout.channel.exit_status_ready():
                     if stdout.channel.recv_ready():
                         response += stdout.readlines()
+                    elif time.time() - startTime > timeout:
+                        return (503, "", "Command timed out")
                     else:
                         time.sleep(0.25)
                 response += stdout.readlines()
