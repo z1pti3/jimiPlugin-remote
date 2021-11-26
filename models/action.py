@@ -365,7 +365,9 @@ class _remoteDownload(action._action):
         if self.useStorage:
             try:
                 localFileClass = jimi.storage._storage().getAsClass(query={ "fileData" : localFile, "systemStorage" : True, "source" : "remoteDownload" })[0]
-            except:
+                if not jimi.db.objectACLAccess(self.acl,localFileClass.acl,"write"):
+                    return {"result" : False, "rc" : 401, "msg" : "You do not have permissions to modify that storage file. storageID={0}".format(localFileClass._id)}
+            except Exception as e:
                 localFileClass = jimi.storage._storage()
                 localFileClass.new(self.acl,"remoteDownload",localFile,True)
             localFile = localFileClass.getFullFilePath()
@@ -399,7 +401,10 @@ class _remoteUpload(action._action):
 
         if self.useStorage:
             try:
-                localFilePath = jimi.storage._storage().getAsClass(id=localFile)[0].getLocalFilePath()
+                localFileObj = jimi.storage._storage().getAsClass(id=localFile)[0]
+                if not jimi.db.objectACLAccess(self.acl,localFileObj.acl,"read"):
+                    return {"result" : False, "rc" : 401, "msg" : "You do not have permissions to read that storage file. storageID={0}".format(localFile)}
+                localFilePath = localFileObj.getLocalFilePath()
                 if not localFilePath:
                     raise
                 localFile = localFilePath
