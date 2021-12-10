@@ -6,27 +6,39 @@ from plugins.remote.includes import remote
 
 class cisco(remote.remote):
 
-    def __init__(self, host, deviceHostname, username="Admin", password='', enablePassword="", port=22, timeout=5):
+    def __init__(self, host, deviceHostname, username="Admin", password='', enablePassword="", port=22, timeout=5, attempts=3):
         self.host = host
         self.deviceHostname = deviceHostname
+        self.timeout = timeout
         self.enablePassword = enablePassword
         self.error = "" 
         self.type = "cisco"
-        self.client = self.connect(username,password,port,timeout)
+        for x in range(1,attempts):
+            self.client = self.connect(username,password,port)
+            if self.client:
+                break
+            time.sleep(timeout)
 
-    def connect(self,username,password,port,timeout):
+    def connect(self,username,password,port):
         try: 
             client = SSHClient()
             client.load_system_host_keys()
             client.set_missing_host_key_policy(AutoAddPolicy())   
             try:
-                client.connect(self.host, username=username, password=password, port=port, look_for_keys=True, timeout=timeout,banner_timeout=timeout)
+                client.connect(self.host, username=username, password=password, port=port, look_for_keys=True, timeout=self.timeout,banner_timeout=300)
             except ssh_exception.SSHException:
-                time.sleep(timeout)
-                client.connect(self.host, username=username, password=password, port=port, look_for_keys=True, timeout=timeout,banner_timeout=timeout)
+                time.sleep(2)
+                client.connect(self.host, username=username, password=password, port=port, look_for_keys=True, timeout=self.timeout,banner_timeout=300)
             self.channel = client.invoke_shell()
-            if not self.recv(timeout):
-                self.error = "Device detected name does not match the device name provided."
+            if not self.recv():
+                startTime = time.time()
+                detectedDevice = ""
+                while ( time.time() - startTime < self.timeout ):
+                    self.command("")
+                    if self.channel.recv_ready():
+                        detectedDevice += self.channel.recv(2048).decode().strip()
+                    time.sleep(0.5)
+                self.error = f"Device detected name does not match the device name provided. Hostname found = {detectedDevice}"
                 client.close()
                 return None
             return client
@@ -47,7 +59,7 @@ class cisco(remote.remote):
             self.client.close()
             self.client = None
 
-    def awaitStringRecv(self,awaitString,timeout=5):
+    def awaitStringRecv(self,awaitString,timeout=10):
         startTime = time.time()
         recvBuffer = ""
         result = False
@@ -65,7 +77,7 @@ class cisco(remote.remote):
             return recvBuffer
         return False
 
-    def recv(self,timeout=5):
+    def recv(self,timeout=5,attempt=0):
         startTime = time.time()
         deviceHostname = self.deviceHostname
         if len(deviceHostname) >= 20:
@@ -84,9 +96,16 @@ class cisco(remote.remote):
             time.sleep(0.1)
         if result:
             return recvBuffer
+        elif attempt < 3:
+            attempt += 1
+            self.channel.send(" ")
+            recvData = self.recv(timeout,attempt)
+            if recvData:
+                recvBuffer += recvData
+                return recvBuffer
         return False
 
-    def sendCommand(self,command):
+    def sendCommand(self,command,attempt=0):
         self.channel.send("{0}{1}".format(command,"\n"))
         time.sleep(0.5)
         return True
