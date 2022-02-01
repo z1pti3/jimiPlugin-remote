@@ -111,7 +111,10 @@ class cisco(remote.remote):
             command = command + " " + " ".join(args)
         if self.sendCommand(command):
             returnedData = jimi.helpers.replaceBackspaces(self.recv(timeout))
-            if command not in returnedData:
+            maxLen = 40
+            if len(command) < maxLen:
+                maxLen = len(command)
+            if command[maxLen] not in returnedData:
                 return (None,returnedData,"Unable to send command")
         else:
             return (None,"","Unable to send command")
