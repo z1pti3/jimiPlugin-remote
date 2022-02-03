@@ -74,13 +74,13 @@ class cisco(remote.remote):
         result = False
         while ( time.time() - startTime < timeout ):
             if self.channel.recv_ready():
-                recvBuffer += self.channel.recv(1024).decode().strip()
+                recvBuffer += jimi.helpers.replaceBackspaces(self.channel.recv(1024).decode())
                 if recvBuffer.split('\n')[-1].endswith("--More--"):
                     self.channel.send(" ")
                     recvBuffer = recvBuffer[:-8]
                 elif recvBuffer.split('\n')[-1].lower().startswith(deviceHostname.lower()) or recvBuffer.split('\r')[-1].lower().startswith(deviceHostname.lower()):
                     result = True
-                    break 
+                    break
             time.sleep(0.1)
         if result:
             return recvBuffer
@@ -88,7 +88,6 @@ class cisco(remote.remote):
 
     def sendCommand(self,command):
         self.channel.send("{0}{1}".format(command,"\n"))
-        time.sleep(0.5)
         return True
         
     def command(self, command, args=[], elevate=False, runAs=None, timeout=5):
@@ -110,11 +109,15 @@ class cisco(remote.remote):
         if args:
             command = command + " " + " ".join(args)
         if self.sendCommand(command):
-            returnedData = jimi.helpers.replaceBackspaces(self.recv(timeout))
+            returnedData = self.recv(timeout)
+            if returnedData:
+                returnedData = jimi.helpers.replaceBackspaces(returnedData)
+            else:
+                 returnedData = "Failed to retrieve data"
             maxLen = 40
             if len(command) < maxLen:
-                maxLen = len(command)
-            if command[maxLen] not in returnedData:
+                maxLen = len(command)-1
+            if command[:maxLen] not in returnedData:
                 return (None,returnedData,"Unable to send command")
         else:
             return (None,"","Unable to send command")
