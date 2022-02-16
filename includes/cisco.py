@@ -75,7 +75,7 @@ class cisco(remote.remote):
         while ( time.time() - startTime < timeout ):
             if self.channel.recv_ready():
                 recvBuffer += jimi.helpers.replaceBackspaces(self.channel.recv(1024).decode())
-                if recvBuffer.split('\n')[-1].endswith("--More--"):
+                if recvBuffer.split('\n')[-1].strip().endswith("--More--"):
                     self.channel.send(" ")
                     recvBuffer = recvBuffer[:-8]
                 elif recvBuffer.split('\n')[-1].lower().startswith(deviceHostname.lower()) or recvBuffer.split('\r')[-1].lower().startswith(deviceHostname.lower()):
