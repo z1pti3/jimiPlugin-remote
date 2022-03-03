@@ -1,6 +1,6 @@
 from core import settings, helpers, auth
 from core.models import action
-from plugins.remote.includes import linux, windows, fortigate, cisco
+from plugins.remote.includes import linux, windows, fortigate, cisco, aruba
 import re
 import time
 import uuid
@@ -174,7 +174,7 @@ class _remoteConnectFortigate(action._action):
 
             return {"result" : True, "rc" : 0, "msg" : "Connection successful", "connection_id" : connection_id}
         else:
-            return {"result" : False, "rc" : 403, "msg" : "Connection failed - {0}".format(client.error)}
+            return {"result" : False, "rc" : 403, "msg" : f"Connection failed - {client.error}"}
 
     def setAttribute(self,attr,value,sessionData=None):
         if attr == "password" and not value.startswith("ENC ") and not re.match(".*%%.*%%",value):
@@ -232,6 +232,58 @@ class _remoteConnectCisco(action._action):
             self.enable_password = "ENC {0}".format(auth.getENCFromPassword(value))
             return True
         return super(_remoteConnectCisco, self).setAttribute(attr,value,sessionData=sessionData)
+
+class _remoteConnectAruba(action._action):
+    host = str()
+    port = str()
+    deviceHostname = str()
+    ssh_username = str()
+    ssh_password = str()
+    enable_password = str()
+    timeout = 5
+
+    def doAction(self,data):
+        host = helpers.evalString(self.host,{"data" : data["flowData"]})
+        port = helpers.evalString(self.port,{"data" : data["flowData"]})
+        if not port:
+            port = 22
+        deviceHostname = helpers.evalString(self.deviceHostname,{"data" : data["flowData"]})
+        ssh_username = helpers.evalString(self.ssh_username,{"data" : data["flowData"]})
+        if self.ssh_password.startswith("ENC"):
+            ssh_password = auth.getPasswordFromENC(self.ssh_password)
+        elif "%%" in self.ssh_password:
+            ssh_password = helpers.evalString(self.ssh_password,{"data" : data["flowData"]})
+        else:
+            ssh_password = ""
+        if self.enable_password.startswith("ENC"):
+            enable_password = auth.getPasswordFromENC(self.enable_password)
+        elif "%%" in self.enable_password:
+            enable_password = helpers.evalString(self.enable_password,{"data" : data["flowData"]})
+        else:
+            enable_password = ""
+
+        client = aruba.aruba(host,deviceHostname,ssh_username,ssh_password,enable_password,port,self.timeout)
+
+        if client.client != None:
+            connection_id = str(uuid.uuid4())
+            if "remote" not in data["eventData"]:
+                data["eventData"]["remote"] = {}
+            data["eventData"]["remote"][connection_id] = { "client" : client }
+            data["flowData"]["var"]["remote_connection_id"] = connection_id
+
+            return {"result" : True, "rc" : 0, "msg" : "Connection successful", "connection_id" : connection_id}
+        else:
+            return {"result" : False, "rc" : 403, "msg" : "Connection failed - {0}".format(client.error)}
+
+    def setAttribute(self,attr,value,sessionData=None):
+        if attr == "ssh_password" and not value.startswith("ENC ") and not re.match(".*%%.*%%",value):
+            self.ssh_password = "ENC {0}".format(auth.getENCFromPassword(value))
+            return True
+        if attr == "enable_password" and not value.startswith("ENC ") and not re.match(".*%%.*%%",value):
+            self.enable_password = "ENC {0}".format(auth.getENCFromPassword(value))
+            return True
+        return super(_remoteConnectAruba, self).setAttribute(attr,value,sessionData=sessionData)
+
 
 class _remoteDisconnect(action._action):
     connection_id = str()
@@ -365,9 +417,7 @@ class _remoteDownload(action._action):
         if self.useStorage:
             try:
                 localFileClass = jimi.storage._storage().getAsClass(query={ "fileData" : localFile, "systemStorage" : True, "source" : "remoteDownload" })[0]
-                if not jimi.db.objectACLAccess(self.acl,localFileClass.acl,"write"):
-                    return {"result" : False, "rc" : 401, "msg" : "You do not have permissions to modify that storage file. storageID={0}".format(localFileClass._id)}
-            except Exception as e:
+            except:
                 localFileClass = jimi.storage._storage()
                 localFileClass.new(self.acl,"remoteDownload",localFile,True)
             localFile = localFileClass.getFullFilePath()
@@ -401,10 +451,7 @@ class _remoteUpload(action._action):
 
         if self.useStorage:
             try:
-                localFileObj = jimi.storage._storage().getAsClass(id=localFile)[0]
-                if not jimi.db.objectACLAccess(self.acl,localFileObj.acl,"read"):
-                    return {"result" : False, "rc" : 401, "msg" : "You do not have permissions to read that storage file. storageID={0}".format(localFile)}
-                localFilePath = localFileObj.getLocalFilePath()
+                localFilePath = jimi.storage._storage().getAsClass(id=localFile)[0].getLocalFilePath()
                 if not localFilePath:
                     raise
                 localFile = localFilePath
