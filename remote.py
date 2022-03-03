@@ -1,7 +1,7 @@
 from core import plugin, model
 
 class _remote(plugin._plugin):
-    version = 1.48
+    version = 1.5
 
     def install(self):
         # Register models
@@ -17,6 +17,7 @@ class _remote(plugin._plugin):
         model.registerModel("remoteMultiCommand","_remoteMultiCommand","_action","plugins.remote.models.action")
         model.registerModel("remoteConnectCisco","_remoteConnectCisco","_action","plugins.remote.models.action")
         model.registerModel("remoteConnectWindowsPSExec","_remoteConnectWindowsPSExec","_action","plugins.remote.models.action")
+        model.registerModel("remoteConnectAruba","_remoteConnectAruba","_action","plugins.remote.models.action")
         return True
         
 
@@ -34,6 +35,7 @@ class _remote(plugin._plugin):
         model.deregisterModel("remoteMultiCommand","_remoteMultiCommand","_action","plugins.remote.models.action")
         model.deregisterModel("remoteConnectCisco","_remoteConnectCisco","_action","plugins.remote.models.action") 
         model.deregisterModel("remoteConnectWindowsPSExec","_remoteConnectWindowsPSExec","_action","plugins.remote.models.action")
+        model.deregisterModel("remoteConnectAruba","_remoteConnectAruba","_action","plugins.remote.models.action") 
         return True
 
     def upgrade(self,LatestPluginVersion):
@@ -59,7 +61,6 @@ class _remote(plugin._plugin):
             model.registerModel("remoteConnectWindowsPSExec","_remoteConnectWindowsPSExec","_action","plugins.remote.models.action")
             model.deregisterModel("linuxStartPortForward","_remoteLinuxStartPortForward","_action","plugins.remote.models.action")        
             model.deregisterModel("linuxStopPortForward","_remoteLinuxStopPortForward","_action","plugins.remote.models.action")
+        if self.version < 1.5:
+            model.registerModel("remoteConnectAruba","_remoteConnectAruba","_action","plugins.remote.models.action")            
         return True
-
-
-
