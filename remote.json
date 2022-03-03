@@ -1,7 +1,7 @@
 {
    "name": "remote",
    "author": "z1p, b1scuit-thi3f, TerrifiedBug, TheCypherGoat",
-   "version": 1.48,
+   "version": 1.5,
    "categories": ["remote","automation"],
    "description": "jimi IT automation framework to carry out remote tasks on workstations, servers, firewalls, swtiches using winRM, SMB, SSH, SCP",
    "icon": null,
@@ -519,6 +519,95 @@
             }
          }
       },
+      "remoteConnectAruba": {
+        "display_name": "remoteConnectAruba",
+        "className": "_remoteConnectAruba",
+        "class_location": "models.action",
+        "description": "",
+        "fields": [
+           {
+              "schema_item": "host",
+              "schema_value": "host",
+              "type": "input",
+              "label": "host",
+              "description": ""
+           },
+           {
+              "schema_item": "port",
+              "schema_value": "port",
+              "type": "input",
+              "label": "port",
+              "description": ""
+           },
+           {
+              "schema_item": "deviceHostname",
+              "schema_value": "deviceHostname",
+              "type": "input",
+              "label": "deviceHostname",
+              "description": ""
+           },
+           {
+              "schema_item": "ssh_username",
+              "schema_value": "ssh_username",
+              "type": "input",
+              "label": "ssh_username",
+              "description": ""
+           },
+           {
+              "schema_item": "ssh_password",
+              "schema_value": "ssh_password",
+              "type": "input",
+              "label": "ssh_password",
+              "description": ""
+           },
+           {
+              "schema_item": "enable_password",
+              "schema_value": "enable_password",
+              "type": "input",
+              "label": "enable_password",
+              "description": ""
+           },
+           {
+              "schema_item": "timeout",
+              "schema_value": "timeout",
+              "type": "input",
+              "label": "timeout",
+              "description": ""
+           }
+        ],
+        "data_out": {
+           "result": {
+              "description": "Returns True when successful.",
+              "type": "boolean",
+              "always_present": true,
+              "values": {
+                 "True": {
+                    "description": "Successful."
+                 },
+                 "False": {
+                    "description": "Failure."
+                 }
+              }
+           },
+           "rc": {
+              "description": "Returns the exit code for the action.",
+              "type": "number",
+              "always_present": true,
+              "values": {
+                 "0": {
+                    "description": "Successful."
+                 }
+              }
+           },
+           "connection_id" : { 
+              "description": "Connection ID value for the connection made.",
+              "type": "string",
+              "always_present": false,
+              "values": {
+              } 
+           }
+        }
+     },
       "remoteDisconnect": {
          "display_name": "remoteDisconnect",
          "className": "_remoteDisconnect",
