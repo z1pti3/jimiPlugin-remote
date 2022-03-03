@@ -2,7 +2,6 @@ from paramiko import SSHClient, AutoAddPolicy, ssh_exception
 import time
 import jimi
 import re
-import logging
 
 from plugins.remote.includes import remote
 
@@ -142,12 +141,10 @@ class aruba(remote.remote):
         while ( time.time() - startTime < timeout ):
             if self.channel.recv_ready():
                 recvBuffer += self.strip_ansi_escape_codes(self.channel.recv(1024).decode().strip())
-                logging.debug("danny-{0}".format(awaitString.split('\n')[-1]))
                 if recvBuffer.split('\n')[-1].strip().startswith("-- MORE --, next page: Space, next line: Enter, quit: C"):
                     self.channel.send(" ")
                     recvBuffer = recvBuffer[:-63]
                 elif recvBuffer.split('\n')[-1].strip().endswith("Press any key to continue"):
-                    logging.debug("dannyhere")
                     self.channel.send(" ")
                     recvBuffer = recvBuffer.replace("Press any key to continue","")
                 elif recvBuffer.split('\n')[-1].lower().startswith(awaitString.lower()):
@@ -168,12 +165,10 @@ class aruba(remote.remote):
         while ( time.time() - startTime < timeout ):
             if self.channel.recv_ready():
                 recvBuffer += self.strip_ansi_escape_codes(self.channel.recv(1024).decode().strip())
-                logging.debug("danny-{0}".format(recvBuffer.split('\n')[-1]))
                 if recvBuffer.split('\n')[-1].strip().startswith("-- MORE --, next page: Space, next line: Enter, quit: C"):
                     self.channel.send(" ")
                     recvBuffer = recvBuffer[:-63]
                 elif recvBuffer.split('\n')[-1].strip().endswith("Press any key to continue"):
-                    logging.debug("dannyhere")
                     self.channel.send(" ")
                     recvBuffer = recvBuffer.replace("Press any key to continue","")
                 elif recvBuffer.split('\n')[-1].lower().startswith(deviceHostname.lower()):
