@@ -254,6 +254,9 @@ class _remoteCommand(action._action):
     command = str()
     arguments = list()
     elevate = bool()
+    answerPrompt = bool()
+    promptMatch = str()
+    promptResponse = str()
     runAs = str()
     timeout = 60
 
@@ -262,14 +265,19 @@ class _remoteCommand(action._action):
         if connection_id == "":
             connection_id = data["flowData"]["var"]["remote_connection_id"]
 
-        command = helpers.evalString(self.command,{"data" : data["flowData"]})
-        arguments = helpers.evalList(self.arguments,{"data" : data["flowData"]})
+        command = helpers.evalString(self.command,{"data" : data["flowData"], "eventData" : data["eventData"], "conductData" : data["conductData"], "persistentData" :  data["persistentData"] })
+        arguments = helpers.evalList(self.arguments,{"data" : data["flowData"], "eventData" : data["eventData"], "conductData" : data["conductData"], "persistentData" :  data["persistentData"] })
+        promptMatch = helpers.evalString(self.promptMatch,{"data" : data["flowData"], "eventData" : data["eventData"], "conductData" : data["conductData"], "persistentData" :  data["persistentData"] })
+        promptResponse = helpers.evalString(self.promptResponse,{"data" : data["flowData"], "eventData" : data["eventData"], "conductData" : data["conductData"], "persistentData" :  data["persistentData"] })
         try:
             client = data["eventData"]["remote"][connection_id]["client"]
         except KeyError:
             return {"result" : False, "rc" : 255, "msg" : "Unable to load remote connection - connection_id='{0}'".format(connection_id)}
         if client:
-            exitCode, output, errors = client.command(command,args=arguments,elevate=self.elevate,runAs=self.runAs,timeout=self.timeout)
+            if self.answerPrompt:
+                exitCode, output, errors = client.command(command,args=arguments,elevate=self.elevate,runAs=self.runAs,timeout=self.timeout,promptMatch=promptMatch,promptResponse=promptResponse)
+            else:
+                exitCode, output, errors = client.command(command,args=arguments,elevate=self.elevate,runAs=self.runAs,timeout=self.timeout)
             
             if exitCode != None:
                 return {"result" : True, "rc" : exitCode, "msg" : "Command successful", "data" : output, "errors" : errors, "command" : command}
@@ -277,7 +285,7 @@ class _remoteCommand(action._action):
                 return {"result" : False, "rc" : 255, "msg" : client.error, "data" : output, "errors" : errors, "command" : command}
         else:
             return {"result" : False, "rc" : 403, "msg" : "No connection found"}
-
+        
 class _remoteMultiCommand(action._action):
     connection_id = str()
     commands = str()
