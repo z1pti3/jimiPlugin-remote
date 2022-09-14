@@ -74,13 +74,13 @@ class cisco(remote.remote):
         result = False
         while ( time.time() - startTime < timeout ):
             if self.channel.recv_ready():
-                recvBuffer += jimi.helpers.replaceBackspaces(self.channel.recv(1024).decode())
+                recvBuffer += self.channel.recv(1024).decode().strip()
                 if recvBuffer.split('\n')[-1].endswith("--More--"):
                     self.channel.send(" ")
                     recvBuffer = recvBuffer[:-8]
                 elif recvBuffer.split('\n')[-1].lower().startswith(deviceHostname.lower()) or recvBuffer.split('\r')[-1].lower().startswith(deviceHostname.lower()):
                     result = True
-                    break
+                    break 
             time.sleep(0.1)
         if result:
             return recvBuffer
@@ -88,9 +88,10 @@ class cisco(remote.remote):
 
     def sendCommand(self,command):
         self.channel.send("{0}{1}".format(command,"\n"))
+        time.sleep(0.5)
         return True
         
-    def command(self, command, args=[], elevate=False, runAs=None, timeout=5):
+    def command(self, command, args=[], elevate=False, runAs=None, timeout=5,promptMatch=None,promptResponse=None):
         if command == "enable":
             enableResult = self.enable(self.enablePassword)
             if enableResult:
@@ -108,16 +109,18 @@ class cisco(remote.remote):
                 return (None, "", "Unable to save config")
         if args:
             command = command + " " + " ".join(args)
-        if self.sendCommand(command):
-            returnedData = self.recv(timeout)
-            if returnedData:
-                returnedData = jimi.helpers.replaceBackspaces(returnedData)
+        if promptMatch:
+            returnedData = ""
+            self.sendCommand(command)
+            if self.awaitStringRecv(promptMatch):
+                self.sendCommand(promptResponse)
+                returnedData = self.recv(timeout)
+                return (0, returnedData, "")
             else:
-                 returnedData = "Failed to retrieve data"
-            maxLen = 40
-            if len(command) < maxLen:
-                maxLen = len(command)-1
-            if command[:maxLen] not in returnedData:
+                return (None, "", "Unable to find prompt - is the match correct?")
+        elif self.sendCommand(command):
+            returnedData = jimi.helpers.replaceBackspaces(self.recv(timeout))
+            if command not in returnedData:
                 return (None,returnedData,"Unable to send command")
         else:
             return (None,"","Unable to send command")
