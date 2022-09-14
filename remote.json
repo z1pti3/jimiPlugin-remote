@@ -1,7 +1,7 @@
 {
    "name": "remote",
    "author": "z1p, b1scuit-thi3f, TerrifiedBug, TheCypherGoat",
-   "version": 1.48,
+   "version": 1.50,
    "categories": ["remote","automation"],
    "description": "jimi IT automation framework to carry out remote tasks on workstations, servers, firewalls, swtiches using winRM, SMB, SSH, SCP",
    "icon": null,
@@ -616,6 +616,30 @@
                "type": "input",
                "label": "timeout",
                "description": ""
+            },
+            {
+               "schema_item": "answerPrompt",
+               "schema_value": "answerPrompt",
+               "type": "group-checkbox",
+               "label": "answerPrompt",
+               "description": "",
+               "group": 1
+            },
+            {
+               "schema_item": "promptMatch",
+               "schema_value": "promptMatch",
+               "type": "input",
+               "label": "promptMatch",
+               "description": "",
+               "group": 1
+            },
+            {
+               "schema_item": "promptResponse",
+               "schema_value": "promptResponse",
+               "type": "input",
+               "label": "promptResponse",
+               "description": "",
+               "group": 1
             }
          ],
          "data_out": {
